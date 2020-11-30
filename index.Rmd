@@ -1,0 +1,364 @@
+---
+title: "practice_misc"
+author: ""
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
+output:
+  html_document: 
+    toc: TRUE
+    toc_float: true
+    toc_depth: 4
+    number_sections: true
+    theme: readable
+    highlight: pygments
+    css: custom.css
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# パッケージ読み込み
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+
+```
+
+
+
+# 正規表現
+
+## 数字,文字
+### 例の作成
+```{r}
+num <- c("1", "one", "一", "11", "111")
+```
+
+### 数字
+
+* どれも同じ
+
+#### 一字
+```{r}
+str_view(num, "[0-9]")
+str_view(num, "[:digit:]")
+str_view(num, "\\d")
+```
+
+#### 三字
+```{r}
+str_view(num, "[0-9][0-9][0-9]")
+```
+
+
+### アルファベット
+```{r}
+str_view(num, "[a-z]")
+str_view(num, "[:alpha:]") # 日本語も入る
+
+str_view_all(num, "[a-z]")
+```
+
+#### アルファベットの文字数指定
+
+
+```{r}
+str_view(num, "[a-z][a-z][a-z]")
+str_view(num, "[a-z]..")
+str_view(num, "[a-z]{3}")
+
+```
+
+### 数字とアルファベット
+```{r}
+str_view(num, "[0-9a-z]")
+str_view_all(num, "[0-9a-z]")
+```
+
+```{r}
+str_view(num, "...")
+```
+
+
+## 単語のつながり
+### 例の作成
+```{r}
+text <- c("test", "test_test", "test_test_test", "testtest", 
+          "test_testtest", "testtest_test", "test_test_","teest_teest")
+```
+
+### 一回繰り返し
+```{r}
+str_view(text, "(....)_\\1")
+str_view(text, "(.+)_\\1")
+str_view(text, "(....)\\1")
+str_view(text, "(....)\\1_\\1")
+```
+
+### 二回繰り返し
+```{r}
+str_view(text, "(....)_\\1_\\1")
+```
+
+
+## 区分する点を探す
+
+* 変数名でpivot_longerするときに
+
+### 検討用データフレーム作成
+```{r}
+mtcars_vsam <- 
+  mtcars %>% 
+  summarise(across(c(vs, am),
+                   list(
+                     p = ~mean(., na.rm = TRUE),
+                     n = ~sum(., na.rm = TRUE),
+               total_n = ~sum(!is.na(.))
+                   ))
+            )
+
+mtcars_vsam
+```
+
+#### meanとsdを列名にするpivot_longer(×な例)
+
+* total_nも列名にもってきたい
+
+```{r}
+mtcars_vsam %>% 
+  pivot_longer(everything(),
+               names_to = c("items", ".value"),
+               names_pattern = "(.*)_(.*)")
+```
+
+
+### 変数名の文字の長さ確認
+```{r}
+
+# 降順に並び替えて1行目を取得
+max_value <- 
+names(mtcars_vsam) %>%
+  str_count() %>%
+  as_tibble() %>%
+  arrange(desc(value))
+
+max_value
+
+# 文字数の最大値取得
+max_value <- 
+  max_value %>% 
+  slice(1)
+
+# total_pの前までで切る情報を追加したいため、最大値-total_pの文字数計算
+
+max_value - str_count("total_p")
+```
+
+#### meanとsdを列名にするpivot_longer(okな例)
+
+```{r}
+mtcars_vsam %>% 
+  pivot_longer(everything(),
+               names_to = c("items", ".value"),
+               names_pattern = "(.{1,2})_(.+)") # _の前は1～2字までに限定
+```
+
+##### {n}の挙動
+
+https://r4ds.had.co.nz/strings.html#repetition
+
+```{r}
+
+str_view("xxxxx", ".{1}")
+str_view("xxxxx", "x{3}")
+
+x <- c("xx_xxx","x_xx_xxx_xxxx_xxxxx")
+
+str_view(x, "x{2,4}")
+
+str_view_all(x, "x{2,4}")
+
+
+numbers <- 
+  c("123", "123456", "123456789")
+
+str_view(numbers, ".{4,}")
+# str_view(numbers, ".{,9}")
+
+str_view(numbers, ".{4,7}")
+
+str_view(numbers, ".{4,7}?") # lazy
+
+```
+
+## 連続量を2値化して割合を出して1つのデータフレームに
+### 2値変数作成
+```{r}
+df_peng <-
+  penguins %>%
+  mutate(across(ends_with("mm"),
+                list(m = ~if_else(. > mean(., na.rm = TRUE),1,0)))
+         )
+
+
+```
+
+### 割合とnとtotal_nを算出
+```{r}
+
+df_peng_res <- 
+df_peng %>%
+  summarise(across(ends_with("_m"),
+                   list( p    =~mean(., na.rm = TRUE),
+                         n    =~sum(., na.rm = TRUE),           # bill_length_mm_mが1のn
+                         total_n    =~sum(!is.na(.))))  # bill_length_mm_mのna以外のn（total）
+  )
+
+
+### 変数名の文字の長さ確認
+# 降順に並び替えて1行目を取得
+max_value <- 
+names(df_peng_res) %>%
+  str_count() %>%
+  as_tibble() %>%
+  arrange(desc(value))
+
+max_value
+
+# 文字数の最大値取得
+max_value <- 
+  max_value %>% 
+  slice(1)
+
+# total_pの前までで切る情報を追加したいため、最大値-total_pの文字数計算
+
+max_value - str_count("total_p")
+```
+
+### meanとsdを列名にするpivot_longer
+```{r}
+df_peng_res %>% 
+pivot_longer(everything(),
+               names_to = c("items", ".value"),
+               names_pattern = "(.{1,20})_(.+)") # _の前は1～20字までに限定
+```
+
+
+
+# map関連
+## データフレーム内の複数の変数に一度に関数を適用
+
+```{r}
+# 使用する変数格納
+vars <-
+  mtcars %>% 
+  select(vs,am,gear) %>% 
+  names()
+
+map(vars, ~ count(mtcars, .data[[.x]])) %>% 
+  set_names(vars)                             # listの要素名付与
+```
+
+
+
+
+
+# 要約いろいろ
+
+## psych::describe
+
+* 数値の要約には便利
+
+```{r}
+psych::describe(penguins)
+```
+
+## skimr
+### ヒストグラムなし
+```{r}
+library(skimr)
+
+skim_without_charts(penguins) %>% 
+  as_tibble()
+
+```
+### 型を限定
+```{r}
+skim(penguins) %>% 
+yank("numeric") %>% 
+  as_tibble()
+```
+
+### 層別
+```{r}
+penguins %>% 
+  group_by(sex) %>% 
+  skim() %>% 
+  as_tibble()
+```
+
+#### 層別に特定の変数の平均とSD
+```{r}
+penguins %>% 
+  group_by(species, sex) %>% 
+  skim(bill_length_mm, bill_depth_mm) %>% # selectを先にもってきてもよい
+  as_tibble()
+
+
+```
+
+
+
+
+### longに
+```{r}
+to_long(penguins)
+```
+
+## Data Explorer
+
+https://rpubs.com/mark_sch7/DataExplorerPackage
+
+```{r}
+# devtools::install_github("boxuancui/DataExplorer")
+library(DataExplorer)
+```
+
+
+```{r}
+plot_bar(penguins)
+```
+```{r}
+plot_bar(penguins, with = )
+```
+
+
+```{r}
+plot_histogram(penguins)
+```
+
+# 数字
+## eの表記を数値に
+
+* 浮動小数点表記法 floating point expression あるいは，科学的表記法 scientific notation
+  + http://aoki2.si.gunma-u.ac.jp/Hanasi/StatTalk/fudoushousuu.html
+
+```{r}
+bnum <- 10000000000
+
+bnum
+
+format(bnum, scientific = FALSE)
+```
+### 設定自体を変更
+```{r}
+options(scipen=999)
+
+bnum
+
+# 戻す
+options(scipen = 0)
+
+bnum
+
+```
+
