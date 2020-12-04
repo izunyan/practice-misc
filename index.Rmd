@@ -30,37 +30,45 @@ library(palmerpenguins)
 ## 数字,文字
 ### 例の作成
 ```{r}
-num <- c("1", "one", "一", "11", "111")
+num <- c("1", "11", "111", "l", "|", "one", "一")
 ```
 
-### 数字
+### 数字 {.tabset}
 
 * どれも同じ
 
-#### 一字
+#### 一字 {-}
 ```{r}
 str_view(num, "[0-9]")
 str_view(num, "[:digit:]")
 str_view(num, "\\d")
 ```
 
-#### 三字
+#### 三字 {-}
 ```{r}
 str_view(num, "[0-9][0-9][0-9]")
 ```
 
 
-### アルファベット
+### アルファベット {.tabset}
+#### アルファベットのみ {-}
 ```{r}
 str_view(num, "[a-z]")
-str_view(num, "[:alpha:]") # 日本語も入る
 
+```
+
+#### 日本語も {-}
+```{r}
+str_view(num, "[:alpha:]") # 日本語も入る
+```
+
+#### str_view_all {-}
+```{r}
 str_view_all(num, "[a-z]")
 ```
 
-#### アルファベットの文字数指定
 
-
+#### 文字数指定 {-}
 ```{r}
 str_view(num, "[a-z][a-z][a-z]")
 str_view(num, "[a-z]..")
@@ -68,12 +76,20 @@ str_view(num, "[a-z]{3}")
 
 ```
 
-### 数字とアルファベット
+
+
+### 数字とアルファベット {.tabset}
+#### 一文字 {-}
 ```{r}
 str_view(num, "[0-9a-z]")
+```
+
+#### すべて {-}
+```{r}
 str_view_all(num, "[0-9a-z]")
 ```
 
+#### 指定文字数 {-}
 ```{r}
 str_view(num, "...")
 ```
@@ -86,7 +102,8 @@ text <- c("test", "test_test", "test_test_test", "testtest",
           "test_testtest", "testtest_test", "test_test_","teest_teest")
 ```
 
-### 一回繰り返し
+### 繰り返し {.tabset}
+#### 一回 {-}
 ```{r}
 str_view(text, "(....)_\\1")
 str_view(text, "(.+)_\\1")
@@ -94,7 +111,7 @@ str_view(text, "(....)\\1")
 str_view(text, "(....)\\1_\\1")
 ```
 
-### 二回繰り返し
+#### 二回 {-}
 ```{r}
 str_view(text, "(....)_\\1_\\1")
 ```
@@ -162,10 +179,11 @@ mtcars_vsam %>%
                names_pattern = "(.{1,2})_(.+)") # _の前は1～2字までに限定
 ```
 
-##### {n}の挙動
+##### {n}の挙動  {.tabset}
 
 https://r4ds.had.co.nz/strings.html#repetition
 
+###### 文字
 ```{r}
 
 str_view("xxxxx", ".{1}")
@@ -176,8 +194,10 @@ x <- c("xx_xxx","x_xx_xxx_xxxx_xxxxx")
 str_view(x, "x{2,4}")
 
 str_view_all(x, "x{2,4}")
+```
 
-
+###### 数字
+```{r}
 numbers <- 
   c("123", "123456", "123456789")
 
@@ -189,6 +209,7 @@ str_view(numbers, ".{4,7}")
 str_view(numbers, ".{4,7}?") # lazy
 
 ```
+
 
 ## 連続量を2値化して割合を出して1つのデータフレームに
 ### 2値変数作成
@@ -323,15 +344,16 @@ https://rpubs.com/mark_sch7/DataExplorerPackage
 library(DataExplorer)
 ```
 
-
+### グラフ {.tabset}
+#### 頻度の棒グラフ
 ```{r}
 plot_bar(penguins)
 ```
-```{r}
+```{r eval=FALSE, include=FALSE}
 plot_bar(penguins, with = )
 ```
 
-
+#### ヒストグラム
 ```{r}
 plot_histogram(penguins)
 ```
