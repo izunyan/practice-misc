@@ -23,6 +23,13 @@ library(palmerpenguins)
 
 ```
 
+# github連携
+
+## githubのレポジトリをローカルに作成して管理
+
+-   github上で`Code`\>`clone`でurlをコピー
+-   RStudioで`New Project`\>`Version Control`\>`Git`\>`Repositry URL` にurl貼り付けて`Create Project`
+
 
 
 # 正規表現
@@ -371,6 +378,7 @@ bnum
 
 format(bnum, scientific = FALSE)
 ```
+
 ### 設定自体を変更
 ```{r}
 options(scipen=999)
