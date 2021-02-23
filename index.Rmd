@@ -384,3 +384,16 @@ bnum
 
 ```
 
+# データのサイズ
+## Rで使用しているメモリ量
+```{r}
+library(pryr)
+mem_used()
+```
+
+## オブジェクトのサイズ
+```{r}
+test <- c(1:10000)
+object_size(test)
+```
+
