@@ -12,63 +12,77 @@ output:
     highlight: pygments
     css: custom.css
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 # パッケージ読み込み
+
 ```{r}
 library(tidyverse)
 library(palmerpenguins)
 
 ```
 
+# github連携
 
+## githubのレポジトリをローカルに作成して管理
+
+-   github上で`Code`\>`clone`でurlをコピー
+-   RStudioで`New Project`\>`Version Control`\>`Git`\>`Repositry URL` にurl貼り付けて`Create Project`
 
 # 正規表現
 
 ## 数字,文字
+
 ### 例の作成
+
 ```{r}
 num <- c("1", "11", "111", "l", "|", "one", "一")
 ```
 
 ### 数字 {.tabset}
 
-* どれも同じ
+-   どれも同じ
 
-#### 一字 {-}
+#### 一字 {.unnumbered}
+
 ```{r}
 str_view(num, "[0-9]")
 str_view(num, "[:digit:]")
 str_view(num, "\\d")
 ```
 
-#### 三字 {-}
+#### 三字 {.unnumbered}
+
 ```{r}
 str_view(num, "[0-9][0-9][0-9]")
 ```
 
-
 ### アルファベット {.tabset}
-#### アルファベットのみ {-}
+
+#### アルファベットのみ {.unnumbered}
+
 ```{r}
 str_view(num, "[a-z]")
 
 ```
 
-#### 日本語も {-}
+#### 日本語も {.unnumbered}
+
 ```{r}
 str_view(num, "[:alpha:]") # 日本語も入る
 ```
 
-#### str_view_all {-}
+#### str_view_all {.unnumbered}
+
 ```{r}
 str_view_all(num, "[a-z]")
 ```
 
+#### 文字数指定 {.unnumbered}
 
-#### 文字数指定 {-}
 ```{r}
 str_view(num, "[a-z][a-z][a-z]")
 str_view(num, "[a-z]..")
@@ -76,34 +90,39 @@ str_view(num, "[a-z]{3}")
 
 ```
 
-
-
 ### 数字とアルファベット {.tabset}
-#### 一文字 {-}
+
+#### 一文字 {.unnumbered}
+
 ```{r}
 str_view(num, "[0-9a-z]")
 ```
 
-#### すべて {-}
+#### すべて {.unnumbered}
+
 ```{r}
 str_view_all(num, "[0-9a-z]")
 ```
 
-#### 指定文字数 {-}
+#### 指定文字数 {.unnumbered}
+
 ```{r}
 str_view(num, "...")
 ```
 
-
 ## 単語のつながり
+
 ### 例の作成
+
 ```{r}
 text <- c("test", "test_test", "test_test_test", "testtest", 
           "test_testtest", "testtest_test", "test_test_","teest_teest")
 ```
 
 ### 繰り返し {.tabset}
-#### 一回 {-}
+
+#### 一回 {.unnumbered}
+
 ```{r}
 str_view(text, "(....)_\\1")
 str_view(text, "(.+)_\\1")
@@ -111,17 +130,18 @@ str_view(text, "(....)\\1")
 str_view(text, "(....)\\1_\\1")
 ```
 
-#### 二回 {-}
+#### 二回 {.unnumbered}
+
 ```{r}
 str_view(text, "(....)_\\1_\\1")
 ```
 
-
 ## 区分する点を探す
 
-* 変数名でpivot_longerするときに
+-   変数名でpivot_longerするときに
 
 ### 検討用データフレーム作成
+
 ```{r}
 mtcars_vsam <- 
   mtcars %>% 
@@ -138,7 +158,7 @@ mtcars_vsam
 
 #### meanとsdを列名にするpivot_longer(×な例)
 
-* total_nも列名にもってきたい
+-   total_nも列名にもってきたい
 
 ```{r}
 mtcars_vsam %>% 
@@ -147,8 +167,8 @@ mtcars_vsam %>%
                names_pattern = "(.*)_(.*)")
 ```
 
-
 ### 変数名の文字の長さ確認
+
 ```{r}
 
 # 降順に並び替えて1行目を取得
@@ -179,11 +199,12 @@ mtcars_vsam %>%
                names_pattern = "(.{1,2})_(.+)") # _の前は1～2字までに限定
 ```
 
-##### {n}の挙動  {.tabset}
+##### {n}の挙動 {.tabset}
 
-https://r4ds.had.co.nz/strings.html#repetition
+<https://r4ds.had.co.nz/strings.html#repetition>
 
 ###### 文字
+
 ```{r}
 
 str_view("xxxxx", ".{1}")
@@ -197,6 +218,7 @@ str_view_all(x, "x{2,4}")
 ```
 
 ###### 数字
+
 ```{r}
 numbers <- 
   c("123", "123456", "123456789")
@@ -210,9 +232,10 @@ str_view(numbers, ".{4,7}?") # lazy
 
 ```
 
-
 ## 連続量を2値化して割合を出して1つのデータフレームに
+
 ### 2値変数作成
+
 ```{r}
 df_peng <-
   penguins %>%
@@ -224,6 +247,7 @@ df_peng <-
 ```
 
 ### 割合とnとtotal_nを算出
+
 ```{r}
 
 df_peng_res <- 
@@ -256,6 +280,7 @@ max_value - str_count("total_p")
 ```
 
 ### meanとsdを列名にするpivot_longer
+
 ```{r}
 df_peng_res %>% 
 pivot_longer(everything(),
@@ -263,9 +288,8 @@ pivot_longer(everything(),
                names_pattern = "(.{1,20})_(.+)") # _の前は1～20字までに限定
 ```
 
-
-
 # map関連
+
 ## データフレーム内の複数の変数に一度に関数を適用
 
 ```{r}
@@ -279,22 +303,20 @@ map(vars, ~ count(mtcars, .data[[.x]])) %>%
   set_names(vars)                             # listの要素名付与
 ```
 
-
-
-
-
 # 要約いろいろ
 
 ## psych::describe
 
-* 数値の要約には便利
+-   数値の要約には便利
 
 ```{r}
 psych::describe(penguins)
 ```
 
 ## skimr
+
 ### ヒストグラムなし
+
 ```{r}
 library(skimr)
 
@@ -302,7 +324,9 @@ skim_without_charts(penguins) %>%
   as_tibble()
 
 ```
+
 ### 型を限定
+
 ```{r}
 skim(penguins) %>% 
 yank("numeric") %>% 
@@ -310,6 +334,7 @@ yank("numeric") %>%
 ```
 
 ### 層別
+
 ```{r}
 penguins %>% 
   group_by(sex) %>% 
@@ -318,6 +343,7 @@ penguins %>%
 ```
 
 #### 層別に特定の変数の平均とSD
+
 ```{r}
 penguins %>% 
   group_by(species, sex) %>% 
@@ -327,17 +353,15 @@ penguins %>%
 
 ```
 
-
-
-
 ### longに
+
 ```{r}
 to_long(penguins)
 ```
 
 ## Data Explorer
 
-https://rpubs.com/mark_sch7/DataExplorerPackage
+<https://rpubs.com/mark_sch7/DataExplorerPackage>
 
 ```{r}
 # devtools::install_github("boxuancui/DataExplorer")
@@ -345,24 +369,30 @@ library(DataExplorer)
 ```
 
 ### グラフ {.tabset}
+
 #### 頻度の棒グラフ
+
 ```{r}
 plot_bar(penguins)
 ```
+
 ```{r eval=FALSE, include=FALSE}
 plot_bar(penguins, with = )
 ```
 
 #### ヒストグラム
+
 ```{r}
 plot_histogram(penguins)
 ```
 
 # 数字
+
 ## eの表記を数値に
 
-* 浮動小数点表記法 floating point expression あるいは，科学的表記法 scientific notation
-  + http://aoki2.si.gunma-u.ac.jp/Hanasi/StatTalk/fudoushousuu.html
+-   浮動小数点表記法 floating point expression あるいは，科学的表記法 scientific notation
+
+    -   <http://aoki2.si.gunma-u.ac.jp/Hanasi/StatTalk/fudoushousuu.html>
 
 ```{r}
 bnum <- 10000000000
@@ -371,7 +401,9 @@ bnum
 
 format(bnum, scientific = FALSE)
 ```
+
 ### 設定自体を変更
+
 ```{r}
 options(scipen=999)
 
@@ -383,4 +415,3 @@ options(scipen = 0)
 bnum
 
 ```
-
