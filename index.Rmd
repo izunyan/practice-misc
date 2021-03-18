@@ -190,7 +190,7 @@ mtcars_vsam %>%
 
 https://r4ds.had.co.nz/strings.html#repetition
 
-###### 文字
+###### 文字 {-}
 ```{r}
 
 str_view("xxxxx", ".{1}")
@@ -203,7 +203,7 @@ str_view(x, "x{2,4}")
 str_view_all(x, "x{2,4}")
 ```
 
-###### 数字
+###### 数字 {-}
 ```{r}
 numbers <- 
   c("123", "123456", "123456789")
@@ -226,8 +226,6 @@ df_peng <-
   mutate(across(ends_with("mm"),
                 list(m = ~if_else(. > mean(., na.rm = TRUE),1,0)))
          )
-
-
 ```
 
 ### 割合とnとtotal_nを算出
@@ -284,6 +282,35 @@ vars <-
 
 map(vars, ~ count(mtcars, .data[[.x]])) %>% 
   set_names(vars)                             # listの要素名付与
+```
+## リストの各要素のデータフレームで特定の変数をrename
+```{r}
+# renameしたい変数の型を因子型に
+mtcars_f <- 
+  mtcars %>% 
+  mutate(across(all_of(vars),
+                factor))
+
+# 各変数に対し関数を適用
+library(janitor)
+tables <- 
+map(vars, ~ tabyl(mtcars_f, .data[[.x]])) %>% 
+  set_names(vars)
+
+# 各変数のtabyl結果で連番作成
+tables <- 
+  map(tables, ~mutate(., vid = row_number()))
+
+
+# 各変数名の列を同じ名前に
+tables <- 
+  tables %>% 
+  map(~rename_with(., 
+                      ~ "levels",
+                      where(is.factor)))
+
+bind_rows(tables, .id = "var_name")
+
 ```
 
 
@@ -391,6 +418,75 @@ options(scipen = 0)
 bnum
 
 ```
+
+## 小数点
+
+### 四捨五入のルール
+
+http://cse.naro.affrc.go.jp/takezawa/r-tips/r/37.html
+
+```{r}
+round(1.5)
+round(2.5)
+```
+
+
+### 切り捨てと切り上げ
+```{r}
+round(0.123456, 5) # 普通の丸め
+round(0.123454, 5) # 普通の丸め
+
+
+# library(plyr) # dplyr読んだ後に読み込むとdplyrの関数で動かなくなるのがあるので読むならtidyverseの先に
+plyr::round_any(0.123456, 0.00001, floor)   # 切り捨て
+plyr::round_any(0.123454, 0.00001, ceiling) # 切り上げ
+```
+
+#### 切り捨てをtruncで工夫（整数にして割り戻す）
+```{r}
+
+trunc(0.123456*10^5)/10^5
+```
+
+#### mutateのなかで使う
+```{r}
+# 小数第2位まで出ている変数
+mtcars %>% 
+  select(drat, wt)
+
+# 変数上書き
+
+```
+
+##### 変数上書き
+```{r}
+mtcars %>% 
+  mutate(across(c(drat,wt),
+                ~plyr::round_any(., 0.1, floor))) %>% 
+  select(drat, wt) %>% 
+  head()
+
+```
+
+##### 変数追加
+```{r}
+mtcars %>% 
+  select(drat, wt) %>%
+  mutate(across(c(drat,wt),
+                list(fl = ~plyr::round_any(., 0.1, floor)))) %>% 
+    head()
+
+```
+##### trunc
+```{r}
+mtcars %>% 
+  mutate(across(c(drat,wt),
+                ~trunc(.*10)/10)) %>% 
+  select(drat, wt) %>% 
+  head()
+```
+
+
 
 # データのサイズ
 ## Rで使用しているメモリ量
