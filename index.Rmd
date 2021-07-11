@@ -21,7 +21,6 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(palmerpenguins)
 library(janitor)
-
 ```
 
 # github連携
@@ -296,6 +295,15 @@ df %>% tabyl(moji)
 df %>% 
   tabyl(moji, show_na = FALSE)
 ```
+### countで%
+```{r}
+df %>% 
+  drop_na(moji) %>% 
+  count(moji) %>% 
+  mutate(percent = n/sum(n))
+```
+
+
 ### 因子型
 
 * 本当はカテゴリ"b"があるがデータとしてないことを示す
@@ -478,8 +486,14 @@ map(vars, ~ tabyl(mtcars_f, .data[[.x]])) %>%
 tables <- 
   map(tables, ~mutate(., vid = row_number()))
 
+# 各リスト要素の変数名の列名に文字を追加
+tables <- 
+  tables %>% 
+  map(~rename_with(., 
+                      ~ str_c(., "_test"),
+                      starts_with("per")))
 
-# 各変数名の列を同じ名前に
+# 各リスト要素の変数名の列を同じ名前に
 tables <- 
   tables %>% 
   map(~rename_with(., 
@@ -513,6 +527,7 @@ skim_without_charts(penguins) %>%
   as_tibble()
 
 ```
+
 ### 型を限定
 ```{r}
 skim(penguins) %>% 
@@ -534,8 +549,6 @@ penguins %>%
   group_by(species, sex) %>% 
   skim(bill_length_mm, bill_depth_mm) %>% # selectを先にもってきてもよい
   as_tibble()
-
-
 ```
 
 
@@ -560,6 +573,7 @@ library(DataExplorer)
 ```{r}
 plot_bar(penguins)
 ```
+
 ```{r eval=FALSE, include=FALSE}
 plot_bar(penguins, with = )
 ```
@@ -676,5 +690,73 @@ mem_used()
 ```{r}
 test <- c(1:10000)
 object_size(test)
+```
+
+
+# rowごとの処理
+
+* https://dplyr.tidyverse.org/articles/rowwise.html
+
+## そのまま
+```{r}
+df <- 
+  tibble(a = c(1,  1,  1),
+         b = c(NA, 2,  2),
+         c = c(NA, NA, 3))
+
+df %>% 
+  mutate(total = a + b + c)
+
+df %>% 
+  mutate(total = sum(c(a, b, c), na.rm = TRUE))
+
+
+df %>% 
+  mutate(mean_abc = mean(c(a,b,c), na.rm = TRUE))
+
+
+# 非NAの6セルで合計10を割る
+10/6
+```
+
+## rowwise
+### sum
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(total = sum(c(a, b, c), na.rm = TRUE))
+```
+
+### mean
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c(a, b, c), na.rm = TRUE))
+```
+
+
+### selection helperを使う
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c_across(a:c), na.rm = TRUE))
+
+
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c_across(everything()), na.rm = TRUE))
+
+```
+## rowSumsとrowMean
+
+* こっちの方が早い
+
+```{r}
+df %>% 
+  mutate(total = rowSums(across(a:c), na.rm = TRUE))
+
+df %>% 
+  mutate(total = rowMeans(across(a:c), na.rm = TRUE))
+
 ```
 
