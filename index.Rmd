@@ -342,6 +342,13 @@ df %>%
 # 関数
 
 * https://dplyr.tidyverse.org/articles/programming.html
+* {{}}(curly curly; doubled braces)について
+  + https://www.tidyverse.org/blog/2019/06/rlang-0-4-0/#a-simpler-interpolation-pattern-with-
+  + https://stackoverflow.com/questions/44121728/programming-with-dplyr-using-string-as-input
+  
+* {{}}とenquoの使いわけ
+  + https://stackoverflow.com/questions/65627873/turn-a-dplyr-double-curly-braces-interpolation-into-a-string
+  
 
 ## 平均値とn
 ```{r}
@@ -465,6 +472,77 @@ quos(NULL, species, island, c(species, island)) %>%
 #   map_dfr(~all_group(penguins, bill_length_mm, !!.x))
 ```
 
+# rlangについて
+## curly-curly {{}}
+
+* 引数の文字そのままだけだとエラーになるので特別な指定が必要
+* {{}}演算子を使えば関数の中で，データフレームの変数名を入れられる
+
+* 参照
+  + https://www.tidyverse.org/blog/2020/02/glue-strings-and-tidy-eval/
+  + https://rlang.r-lib.org/reference/quasiquotation.html
+
+
+
+### rlang 0.4.0以降から
+
+* https://www.tidyverse.org/blog/2019/06/rlang-0-4-0/#a-simpler-interpolation-pattern-with-
+
+```{r}
+mean_by <- function(df, by, var){
+df %>% 
+  group_by({{by}}) %>% 
+  summarise(mean = mean({{var}}, na.rm =  TRUE))
+}
+
+mean_by(penguins, species, bill_length_mm)
+```
+
+#### {{}}は!!enquo()のショートカット
+
+* !!(bang-bang)
+  + 単一の環境変数（<-で作られた変数）を代入する場合に使う
+* enquo
+  + defusing演算子
+    - https://rlang.r-lib.org/reference/nse-defuse.html
+  + base関数でいうsubstitute() 
+  + 古い情報: https://tidyeval.tidyverse.org/sec-up-to-speed.html
+
+```{r}
+mean_by2 <- function(df, by, var){
+df %>% 
+  group_by(!!enquo(by)) %>% 
+  summarise(mean = mean(!!enquo(var), na.rm =  TRUE))
+}
+
+mean_by2(penguins, species, bill_length_mm)
+```
+
+```{r eval=FALSE, include=FALSE}
+# 動かない
+mean_by2sym <- function(df, by, var){
+  sby <- sym(by)
+  svar <- sym(var)
+  
+df %>% 
+  group_by(!!sby) %>% 
+  summarise(mean = mean(!!svar, na.rm =  TRUE))
+}
+
+mean_by2sym(penguins, species, bill_length_mm)
+```
+
+
+### 作成する変数名にglueを利用する
+```{r}
+mean_by3 <- function(df, by, var, prefix = "mean"){
+  df %>%
+    group_by({{ by }}) %>%
+    summarise("{prefix}_{{ var }}" := mean({{ var }}, na.rm = TRUE))
+}
+
+mean_by3(penguins, species, bill_length_mm, prefix = "mean")
+```
 
 
 # map関連
@@ -773,12 +851,62 @@ make_dif <- function(df, var){
       mutate(!!sym(str_c("dif_",{{var}})) :=
                     !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
   }
+
+make_dif2 <- function(df, var){
+    df %>%
+      mutate("dif_{{var}}" := !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
+  }
+
+
+
+# 動く
+# make_di2 <- function(df, var){
+# var1 <- sym(str_c({{var}}, ".x"))
+# var2 <- sym(str_c({{var}}, ".y"))
+#       df %>%
+#       mutate("dif_{{var}}" := !!var1 - !!var2)
+#   }
+
+# 動く
+# make_di2 <- function(df, var){
+# var1 <- sym("{{var}}.x")
+# var2 <- sym("{{var}}.y")
+#       df %>%
+#       mutate("dif_{{var}}" := !!var1 - !!var2)
+#   }
+
+
+# 動かない
+# make_dif3 <- function(df, var){
+# df %>% 
+#   mutate("dif_{{var}}" := !!sym("{{var}}.x") - !!sym("{{var}}.y"))
+# }
+
+# 動かない
+# make_dif3 <- function(df, var){
+#   form <- "{{var}}.x - {{var}}.y"
+# df %>%
+#   mutate("dif_{{var}}" := !! rlang::parse_expr(form) )
+# }
+
+
   
 p1_2 %>%
   reduce(var_name, make_dif, .init = .) %>% 
   select(id, species, contains("bill_length"), contains("bill_depth")) %>% 
     glimpse()
 
+
+p1_2 %>%
+  reduce(var_name, make_dif2, .init = .) %>% 
+  select(id, species, contains("bill_length"), contains("bill_depth")) %>% 
+    glimpse()
+
+
+# p1_2 %>%
+#   reduce(var_name, make_dif3, .init = .) %>%
+#   select(id, species, contains("bill_length"), contains("bill_depth")) %>%
+#     glimpse()
 
 ```
 
