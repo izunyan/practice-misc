@@ -1034,3 +1034,21 @@ df %>%
 
 ```
 
+
+# dplyrあれこれ
+## 変数の並びをソートする
+```{r}
+df <- 
+  tribble(~item10, ~item1, ~item100,  ~item5, ~id,
+                10,     1,      100,       5,   1)
+
+df %>% 
+  select(sort(names(.)))
+```
+
+## 変数の並びを数字順にする
+```{r}
+df %>% 
+  select(id, num_range("item", 1:100))
+```
+
