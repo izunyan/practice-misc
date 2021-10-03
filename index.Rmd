@@ -349,14 +349,14 @@ df %>%
 * {{}}とenquoの使いわけ
   + https://stackoverflow.com/questions/65627873/turn-a-dplyr-double-curly-braces-interpolation-into-a-string
   
-
-## 平均値とn
+## 平均値算出
+### 平均値とn
 ```{r}
 mean_n <- 
   function(data, variable){
     data %>% 
       summarise(across({{variable}},
-                       list(mean = ~mean(., na.rm = T),
+                       list(mean = ~mean(., na.rm = TRUE),
                             n    = ~sum(!is.na(.))))
                 )
   }
@@ -364,23 +364,23 @@ mean_n <-
 mean_n(penguins, where(is.numeric))
 ```
 
-### 確認
+#### 確認
 ```{r}
 penguins %>% 
       summarise(across(where(is.numeric),
-                       list(mean = ~mean(., na.rm = T),
+                       list(mean = ~mean(., na.rm = TRUE),
                             n    = ~sum(!is.na(.))))
                 )
 ```
 
 
-## 平均値とnで列をmeanとnに
+### 平均値とnで列をmeanとnに
 ```{r}
 cmean_n <- 
   function(data, variable){
     data %>% 
       summarise(across({{variable}},
-                       list(mean = ~mean(., na.rm = T),
+                       list(mean = ~mean(., na.rm = TRUE),
                             n    = ~sum(!is.na(.))))
       ) %>% 
       pivot_longer(everything(),
@@ -391,11 +391,11 @@ cmean_n <-
 cmean_n(penguins, where(is.numeric))
 ```
 
-### 確認
+#### 確認
 ```{r}
 penguins %>% 
       summarise(across(where(is.numeric),
-                       list(mean = ~mean(., na.rm = T),
+                       list(mean = ~mean(., na.rm = TRUE),
                             n    = ~sum(!is.na(.))))
       ) %>% 
       pivot_longer(everything(),
@@ -403,15 +403,15 @@ penguins %>%
                    names_pattern = "(.*)_(.*)")
 ```
 
-## totalとgroupの平均値とnを一気に算出
+### totalとgroupの平均値とnを一気に算出
 
 * https://community.rstudio.com/t/using-map-with-a-vector-of-variables-and-dplyr-programming/93088
 
 ```{r}
-all_group = function(data, value_vars, group_vars = NULL) {
+all_group = function(data, outcome_vars, group_vars = NULL) {
   data %>% 
     group_by(across({{group_vars}})) %>% 
-    summarise(across({{value_vars}}, 
+    summarise(across({{outcome_vars}}, 
                      list(mean = ~mean(., na.rm = TRUE),
                           n    = ~sum(!is.na(.)))))
 }
@@ -423,7 +423,7 @@ all_group(penguins, bill_length_mm, species)
 
 ```
 
-### 確認
+#### 確認
 ```{r}
 penguins %>% 
   summarise(across(bill_length_mm,
@@ -438,7 +438,7 @@ penguins %>%
 ```
 
 
-### mapでリストに結果を格納
+#### mapでリストに結果を格納
 ```{r}
 quos(NULL, species) %>% 
   map(~all_group(penguins, bill_length_mm, !!.x))
@@ -449,7 +449,7 @@ quos(NULL, species, island, c(species, island)) %>%
 ```
 
 
-### 1つのデータフレームに
+#### 1つのデータフレームに
 
 ```{r}
 quos(NULL, species) %>% 
@@ -471,6 +471,99 @@ quos(NULL, species, island, c(species, island)) %>%
 # quos(NULL, species, island, c(species, island)) %>% 
 #   map_dfr(~all_group(penguins, bill_length_mm, !!.x))
 ```
+
+## クロス表
+### 複数層別と単一のアウトカム
+```{r}
+nest_tabyl = function(df, outcome_var, nest_vars = NULL){
+df %>%
+  nest(data = -c({{nest_vars}})) %>%
+    mutate(freq =
+           map(data, ~ tabyl(.x, {{outcome_var}}))) %>% # show_na = FALSEで欠損無しのpercentのみ算出
+  select(-data) %>%
+  unnest(cols = c(freq)) %>%
+  as_tibble()
+}
+
+# island x species
+nest_tabyl(penguins, species, island)
+
+# speciesのみ
+nest_tabyl(penguins, species)
+
+# 動かない
+# nest_tabyl(penguins, c(species, island))
+
+
+```
+
+#### 複数層別
+```{r}
+# 層：全体，island
+quos(NULL, island) %>% 
+  map( ~nest_tabyl(penguins, species, !!.x))
+
+# 層：全体，island, sex, island x sex
+quos(NULL, island, sex, c(island, sex)) %>% 
+  map( ~nest_tabyl(penguins, species, !!.x))
+```
+
+
+#### 確認
+```{r}
+penguins %>%
+  nest(data = -c(island)) %>%
+    mutate(freq =
+           map(data, ~ tabyl(.x, species))) %>%
+  select(-data) %>%
+  unnest(cols = c(freq)) %>%
+  as_tibble()
+```
+
+
+### 固定層別と複数のアウトカム
+```{r}
+# アウトカム：species, island；層：なし
+quos(species, island) %>% 
+  map( ~nest_tabyl(penguins, !!.x))
+
+
+vars <- c("species", "island")
+
+vars %>% 
+  map( ~nest_tabyl(penguins, !!.x))
+
+
+
+# アウトカム：species, island；層：sex
+quos(species, island) %>% 
+  map( ~nest_tabyl(penguins, !!.x, sex))
+
+
+# 複数層をみるためmtcarsで
+## アウトカム：cyl, gear；層：vs
+quos(cyl, gear) %>% 
+  map( ~nest_tabyl(mtcars, !!.x, vs))
+
+## アウトカム：cyl, gear；層：vs x am
+quos(cyl, gear) %>% 
+  map( ~nest_tabyl(mtcars, !!.x, c(vs,am)))
+
+
+
+
+# 動かない
+# quos(cyl, gear) %>% 
+#   map2(quos(vs, am), ~nest_tabyl(mtcars, !!.x, !!.y))
+```
+
+
+### 欠損がある場合
+```{r}
+
+```
+
+
 
 # rlangについて
 ## curly-curly {{}}
@@ -1021,6 +1114,7 @@ df %>%
   mutate(mean_abc = mean(c_across(everything()), na.rm = TRUE))
 
 ```
+
 ## rowSumsとrowMean
 
 * こっちの方が早い
@@ -1036,17 +1130,20 @@ df %>%
 
 
 # dplyrあれこれ
-## 変数の並びをソートする
+## select
+### 変数の並びをアルファベット順にソートする
 ```{r}
 df <- 
   tribble(~item10, ~item1, ~item100,  ~item5, ~id,
-                10,     1,      100,       5,   1)
+                10,     1,      100,       5,   1) # データの値に特に意味はない
 
 df %>% 
   select(sort(names(.)))
 ```
 
-## 変数の並びを数字順にする
+* ただし，数字の並びは昇順にならない
+
+### 変数の並びを数字順にする
 ```{r}
 df %>% 
   select(id, num_range("item", 1:100))
