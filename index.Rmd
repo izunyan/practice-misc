@@ -1058,75 +1058,190 @@ cat(vars)
 dput(vars)
 ```
 
+# RCTの解析
 
+* パッケージHSAUR3をインストール
 
-# rowごとの処理
-
-* https://dplyr.tidyverse.org/articles/rowwise.html
-
-## そのまま
+## データ
 ```{r}
-df <- 
-  tibble(a = c(1,  1,  1),
-         b = c(NA, 2,  2),
-         c = c(NA, NA, 3))
+btheb <- 
+  HSAUR3::BtheB %>% 
+  clean_names() %>% 
+  as_tibble()
 
-df %>% 
-  mutate(total = a + b + c)
+# id付ける
+btheb <- 
+  btheb %>% 
+  rowid_to_column(var = "id") 
 
-df %>% 
-  mutate(total = sum(c(a, b, c), na.rm = TRUE))
-
-
-df %>% 
-  mutate(mean_abc = mean(c(a,b,c), na.rm = TRUE))
-
-
-# 非NAの6セルで合計10を割る
-10/6
+btheb
 ```
 
-## rowwise
-### sum
+## wideからlongに
 ```{r}
-df %>% 
-  rowwise() %>% 
-  mutate(total = sum(c(a, b, c), na.rm = TRUE))
-```
+btheb_long <- 
+  btheb %>% 
+  pivot_longer(!c(id:treatment),
+               names_to = "time",
+               names_prefix = "bdi_", # timeの値から"bdi_"を削除
+               values_to = "bdi")
 
-### mean
-```{r}
-df %>% 
-  rowwise() %>% 
-  mutate(mean_abc = mean(c(a, b, c), na.rm = TRUE))
+# timeをfactorにして順序指定
+btheb_long <- 
+  btheb_long %>% 
+  mutate(time = fct_relevel(time, "pre", "2m", "3m", "5m"))
+
+
+
+btheb_long
 ```
 
 
-### selection helperを使う
+
+## mixed model
 ```{r}
-df %>% 
-  rowwise() %>% 
-  mutate(mean_abc = mean(c_across(a:c), na.rm = TRUE))
+mm <- 
+  lme4::lmer(bdi ~ treatment*time + (1 | id), 
+             data = btheb_long)
 
-
-df %>% 
-  rowwise() %>% 
-  mutate(mean_abc = mean(c_across(everything()), na.rm = TRUE))
+summary(mm)
 
 ```
 
-## rowSumsとrowMean
 
-* こっちの方が早い
-
+### tidyな出力
 ```{r}
-df %>% 
-  mutate(total = rowSums(across(a:c), na.rm = TRUE))
+broom.mixed::tidy(mm, conf.int = TRUE)
+```
 
-df %>% 
-  mutate(total = rowMeans(across(a:c), na.rm = TRUE))
+### icc
+```{r}
+lme4::VarCorr(mm) %>%
+  as_data_frame() %>%
+  mutate(icc=vcov/sum(vcov))
+```
+
+
+### グラフ
+```{r}
+btheb_long %>% 
+    mutate(id = factor(id)) %>% 
+    filter(id %in% c(1:20)) %>% # IDが1~20までに限定
+ggplot(aes(time, bdi, 
+           group = id)) + # color = id
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_point(size = 1) +
+  theme_minimal() +
+  facet_wrap(vars(treatment))
 
 ```
+
+
+### 対比 contrast
+```{r}
+emmeans::emmeans(mm, specs = trt.vs.ctrl ~ time:treatment, adjust = "none")
+
+
+# 邪道だけど，絶対どうしてもp値を求められている場合
+# lmerTest::lmer(bdi ~ treatment*time + (1 | id), 
+#               data = btheb_long) %>%
+#   anova()
+
+```
+
+
+### mixed modelの解説
+
+* Brown, V. A. (2021). [An Introduction to Linear Mixed-Effects Modeling in R.](https://journals.sagepub.com/doi/full/10.1177/2515245920960351) Advances in Methods and Practices in Psychological Science, 4(1), 2515245920960351.
+
+* [GLMM FAQ](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
+
+
+## Jacobson-Truax and reliable change indices
+
+* Evans, C., Margison, F., & Barkham, M. (1998). [The contribution of reliable and clinically significant change methods to evidence-based mental health.](https://ebmh.bmj.com/content/1/3/70) Evidence-Based Mental Health, 1(3), 70-72.
+
+* パッケージ
+  + https://github.com/AWKruijt/JT-RCI
+
+* BDI-IIの情報
+  + 再検査信頼性:0.75
+    - Erford, B. T., Johnson, E., & Bardoshi, G. (2016). Meta-analysis of the English version of the Beck depression inventory–second edition. Measurement and Evaluation in Counseling and Development, 49(1), 3-33.
+  + 平均値:13.7, SD:12.2
+    - U.S. general population by Internet panel survey providers
+    - Choi, S. W., Schalet, B., Cook, K. F., & Cella, D. (2014). [Establishing a common metric for depressive symptoms: linking the BDI-II, CES-D, and PHQ-9 to PROMIS depression](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5515387/). Psychological assessment, 26(2), 513–527. https://doi.org/10.1037/a0035768  
+
+
+```{r}
+# data.frame型にする必要あり
+btheb <- 
+  btheb %>% 
+  as.data.frame()
+
+# jacobson & truaxのreliable and clinically significant change
+JTRCI::JTRCI(data = btheb, 
+      pre = "bdi_pre", post = "bdi_8m",
+      group = "treatment",
+      reliability = .75,
+      JTcrit = "C",
+      normM = 13.7, normSD = 12.2 # 健康な集団の平均値とSD,
+      # dysfM = , dysfSD = 
+        )
+```
+
+### 個別の結果を表示
+
+* preとpostで欠損がリストワイズされてることに注意
+* RCI > 1.96　がよい
+* RCI = change_abs/Sdiff 
+
+```{r}
+JTRCIdf %>% head()
+```
+
+#### 別パッケージでRCI算出
+
+* `suddengains`パッケージ
+
+```{r}
+# メタ分析による再検査信頼性
+test_retest_bdi <- 0.75
+
+# 8mの欠損を除外したtime1でのBDIのSD
+bdi_pre_sd <- 
+  btheb %>% 
+  drop_na(bdi_8m) %>% 
+  summarise(sd(bdi_pre, na.rm = TRUE)) %>% 
+  pull()
+
+# RCI算出
+suddengains::define_crit1_cutoff(sd = bdi_pre_sd,
+                    reliability = test_retest_bdi)
+```
+
+#### RCI手計算
+```{r}
+# pre SD
+bdi_pre_sd
+
+# standard error
+se_index <- 
+bdi_pre_sd*sqrt(1-test_retest_bdi)
+se_index
+
+# standar error difference
+se_d <- 
+  sqrt(2*se_index^2)
+se_d
+
+# pre - postが次の値を超えるとreliableな値
+
+1.96*se_d
+
+```
+
+
+
 
 
 # dplyrあれこれ
@@ -1149,3 +1264,70 @@ df %>%
   select(id, num_range("item", 1:100))
 ```
 
+## rowごとの処理
+
+* https://dplyr.tidyverse.org/articles/rowwise.html
+
+### そのまま
+```{r}
+df <- 
+  tibble(a = c(1,  1,  1),
+         b = c(NA, 2,  2),
+         c = c(NA, NA, 3))
+
+df %>% 
+  mutate(total = a + b + c)
+
+df %>% 
+  mutate(total = sum(c(a, b, c), na.rm = TRUE))
+
+
+df %>% 
+  mutate(mean_abc = mean(c(a,b,c), na.rm = TRUE))
+
+
+# 非NAの6セルで合計10を割る
+10/6
+```
+
+### rowwise
+#### sum
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(total = sum(c(a, b, c), na.rm = TRUE))
+```
+
+#### mean
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c(a, b, c), na.rm = TRUE))
+```
+
+
+#### selection helperを使う
+```{r}
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c_across(a:c), na.rm = TRUE))
+
+
+df %>% 
+  rowwise() %>% 
+  mutate(mean_abc = mean(c_across(everything()), na.rm = TRUE))
+
+```
+
+### rowSumsとrowMean
+
+* こっちの方が早い
+
+```{r}
+df %>% 
+  mutate(total = rowSums(across(a:c), na.rm = TRUE))
+
+df %>% 
+  mutate(total = rowMeans(across(a:c), na.rm = TRUE))
+
+```
