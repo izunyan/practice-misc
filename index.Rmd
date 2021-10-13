@@ -728,11 +728,31 @@ df_list %>%
 
 ```
 
+## 回帰：複数のアウトカムに同じ説明変数
+```{r}
+# アウトカム変数名格納
+outcomes <- 
+  penguins %>% 
+  select(ends_with("_mm")) %>% 
+  names()
+  
+# 回帰
+res_l <- 
+  outcomes %>% 
+  str_c(., "~ species*sex") %>%
+  map(~lm(as.formula(.x), data = penguins)) %>% 
+  set_names(outcomes)
 
+# 結果の要約
+
+  res_l %>% 
+  map(~broom::tidy(., conf.int = TRUE)) %>% 
+  bind_rows(.id = "outcome") %>% 
+    print(n = 18)
+```
 
 
 # 要約いろいろ
-
 ## psych::describe
 
 * 数値の要約には便利
