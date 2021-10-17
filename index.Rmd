@@ -36,6 +36,10 @@ library(janitor)
 
 # 正規表現
 
+* regular expression (regexp)
+* 参照
+  + https://stringr.tidyverse.org/articles/regular-expressions.html
+
 ## 数字,文字
 ### 例の作成
 ```{r}
@@ -1351,3 +1355,51 @@ df %>%
   mutate(total = rowMeans(across(a:c), na.rm = TRUE))
 
 ```
+
+
+# コードの書式修正
+
+* `remedy`パッケージを読み込んだ後に修正したい範囲を指定し以下を実行
+  + `<-`  Addins > Align
+  +  `=`  Addins > AlignEqual
+
+* https://thinkr-open.github.io/remedy/index.html
+
+******  
+          
+![](image/remedy.gif)      
+
+```{r eval=FALSE, include=FALSE}
+library(remedy)
+
+# <- の位置
+test1 <- 1
+test2<- 2
+test10   <- 10
+
+# 修正後
+test1    <- 1
+test2    <- 2
+test10   <- 10
+
+# = の位置
+test1 = 1
+test2= 2
+test10   = 10
+
+# 修正後
+test1    = 1
+test2    = 2
+test10   = 10
+
+
+```
+
+
+
+# 画面の動画キャプチャをgifファイルに
+
+* 動画だけならwindowsキー + G でもできる
+* ScreenToGifを使う
+
+
