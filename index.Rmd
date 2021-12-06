@@ -299,6 +299,7 @@ df %>% tabyl(moji)
 df %>% 
   tabyl(moji, show_na = FALSE)
 ```
+
 #### countで%
 ```{r}
 df %>% 
@@ -340,6 +341,11 @@ df %>%
             n = sum(suji, na.rm = TRUE),
             total_n = sum(!is.na(suji)))
 
+```
+
+## modelsummary::datasummary()
+```{r}
+modelsummary::datasummary_crosstab(species ~ sex, data = penguins)
 ```
 
 
@@ -532,6 +538,7 @@ quos(species, island) %>%
   map( ~nest_tabyl(penguins, !!.x))
 
 
+# 文字でもOK
 vars <- c("species", "island")
 
 vars %>% 
@@ -544,26 +551,47 @@ quos(species, island) %>%
   map( ~nest_tabyl(penguins, !!.x, sex))
 
 
-# 複数層をみるためmtcarsで
-## アウトカム：cyl, gear；層：vs
+```
+
+#### 複数層をみるためmtcarsで
+
+```{r}
+
+# アウトカム：cyl, gear；層：vs
 quos(cyl, gear) %>% 
   map( ~nest_tabyl(mtcars, !!.x, vs))
 
-## アウトカム：cyl, gear；層：vs x am
+# アウトカム：cyl, gear；層：vs x am
 quos(cyl, gear) %>% 
   map( ~nest_tabyl(mtcars, !!.x, c(vs,am)))
 
 
 
 
-# 動かない
-# quos(cyl, gear) %>% 
-#   map2(quos(vs, am), ~nest_tabyl(mtcars, !!.x, !!.y))
+
+```
+
+### 複数層別と複数アウトカム
+
+```{r}
+
+groups <- quos(NULL, NULL, vs, am)
+outcomes <- quos(cyl, gear, cyl, gear) # 層別と数をそろえるため対応する対象を繰り返す
+  
+  
+map2(outcomes, groups,  ~nest_tabyl(mtcars, !!.x, !!.y))
+```
+
+#### 確認
+```{r}
+tabyl(mtcars, vs, cyl) %>% 
+  adorn_percentages()
 ```
 
 
+
 ### 欠損がある場合
-```{r}
+```{r eval=FALSE, include=FALSE}
 
 ```
 
