@@ -542,7 +542,7 @@ quos(species, island) %>%
 vars <- c("species", "island")
 
 vars %>% 
-  map( ~nest_tabyl(penguins, !!.x))
+  map( ~nest_tabyl(penguins, .x)) # !!.xでも動いた
 
 
 
@@ -552,6 +552,48 @@ quos(species, island) %>%
 
 
 ```
+
+
+#### 同じ文字を含む列名を1つにまとめる
+
+* それぞれのtabyl結果はアウトカム変数名の列名が異なる
+* 単純にbind_rowsすると変数名列が横に増えていく
+* それを回避するため，tabyl結果が入ったlistに，それぞれ同じ名前にrenamaeしていく
+
+```{r}
+library(psych)
+
+ac <- 
+bfi %>%
+  select(A1,A2,C1,C2) %>% 
+  names()  
+
+# 上で定義した変数についてnest_tabyl実行
+ac_res <- 
+map(ac, ~nest_tabyl(bfi, .x, gender)) %>% 
+  set_names(ac) # 各要素に項目名の名前を設定
+
+
+# 各リスト要素の上から3つを表示
+map(ac_res, ~head(.,3))
+
+# 各変数名を統一した名前にrename
+ac_res <- 
+ac_res %>% 
+  map(~rename_with(.,
+                   ~"response",               # 統一名をここに
+                   starts_with(c("A", "C")))
+      )
+
+# 各リスト要素の上から3つを表示
+map(ac_res, ~head(.,3))
+
+
+# 縦に連結
+ac_res %>% 
+  bind_rows(.id = "items")
+```
+
 
 #### 複数層をみるためmtcarsで
 
@@ -790,7 +832,7 @@ res_l <-
 * 数値の要約には便利
 
 ```{r}
-psych::describe(penguins)
+describe(penguins)
 ```
 
 ## skimr
