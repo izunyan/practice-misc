@@ -994,6 +994,25 @@ mtcars %>%
   head()
 ```
 
+# list
+## 長さの違う要素を持つlistを2列のデータフレームにまとめる
+
+* https://stackoverflow.com/questions/68855260/turn-a-list-with-elements-of-unequal-length-into-a-two-column-dataframe-in-r-dp
+
+* 色々方法があるがutils::stack()が早い
+
+
+```{r}
+
+test_l <- 
+  list(a = c(1,2),
+       b = c(1,2,3),
+       c = c(1,2,3,4))
+
+stack(test_l)
+```
+
+
 # データフレーム
 ## 差分の確認
 
