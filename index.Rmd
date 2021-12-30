@@ -246,7 +246,7 @@ df_peng %>%
   )
 
 
-### 変数名の文字の長さ確認
+# 変数名の文字の長さ確認
 # 降順に並び替えて1行目を取得
 max_value <- 
 names(df_peng_res) %>%
@@ -1179,7 +1179,7 @@ dput(vars)
 ```{r}
 btheb <- 
   HSAUR3::BtheB %>% 
-  clean_names() %>% 
+  clean_names() %>%
   as_tibble()
 
 # id付ける
@@ -1212,6 +1212,14 @@ btheb_long
 
 
 ## mixed model
+### mixed modelの解説
+
+* Brown, V. A. (2021). [An Introduction to Linear Mixed-Effects Modeling in R.](https://journals.sagepub.com/doi/full/10.1177/2515245920960351) Advances in Methods and Practices in Psychological Science, 4(1), 2515245920960351.
+
+* [GLMM FAQ](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
+
+
+### モデル作成と実行
 ```{r}
 mm <- 
   lme4::lmer(bdi ~ treatment*time + (1 | id), 
@@ -1231,7 +1239,7 @@ broom.mixed::tidy(mm, conf.int = TRUE)
 ```{r}
 lme4::VarCorr(mm) %>%
   as_data_frame() %>%
-  mutate(icc=vcov/sum(vcov))
+  mutate(icc = vcov/sum(vcov))
 ```
 
 
@@ -1263,11 +1271,59 @@ emmeans::emmeans(mm, specs = trt.vs.ctrl ~ time:treatment, adjust = "none")
 ```
 
 
-### mixed modelの解説
 
-* Brown, V. A. (2021). [An Introduction to Linear Mixed-Effects Modeling in R.](https://journals.sagepub.com/doi/full/10.1177/2515245920960351) Advances in Methods and Practices in Psychological Science, 4(1), 2515245920960351.
 
-* [GLMM FAQ](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
+## cohen's d
+
+* EMAtools::lme.dscore()
+  + lmerTestの結果のtとdfから算出
+  
+$$
+d =  \frac{2t}{\sqrt{df}}
+$$
+
+```{r}
+ EMAtools::lme.dscore(mm, data = btheb_long, "lme4")
+```
+
+
+### 手動で確認
+```{r}
+mmt <- 
+  lmerTest::lmer(bdi ~ treatment*time + (1 | id), 
+             data = btheb_long)
+
+# 交互作用項だけに
+summary(mmt)$coefficients %>% 
+  as_tibble(rownames = "terms") %>% 
+  filter(terms == "treatmentBtheB:time8m")
+
+```
+
+*  `(2*-0.543)/sqrt(280)` = `r (2*-0.543)/sqrt(280)`
+
+
+
+### 参考：通常の群間のCohen's d
+#### 平均値
+```{r}
+btheb %>% 
+  group_by(treatment) %>% 
+  summarise(mean = mean(bdi_8m, na.rm = TRUE),
+            sd = sd(bdi_8m, na.rm = TRUE),
+            n = sum(!is.na(bdi_8m)))
+```
+
+#### Cohen's d
+##### compute.es
+```{r}
+compute.es::mes(13.6, 8.85, 11.5, 6.09, 25, 27)
+```
+
+##### effectsize
+```{r}
+effectsize::cohens_d(bdi_8m ~ treatment, data = btheb)
+```
 
 
 ## Jacobson-Truax and reliable change indices
@@ -1290,6 +1346,9 @@ emmeans::emmeans(mm, specs = trt.vs.ctrl ~ time:treatment, adjust = "none")
 btheb <- 
   btheb %>% 
   as.data.frame()
+
+# インストール
+# devtools::install_github("AWKruijt/JT-RCI")
 
 # jacobson & truaxのreliable and clinically significant change
 JTRCI::JTRCI(data = btheb, 
@@ -1483,6 +1542,10 @@ test10   = 10
 
 
 ```
+
+# R Markdown
+
+* https://rpruim.github.io/s341/S19/from-class/MathinRmd.html
 
 
 
