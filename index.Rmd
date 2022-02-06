@@ -343,6 +343,96 @@ df %>%
 
 ```
 
+## クロス表
+
+### count
+```{r}
+mtcars %>% 
+  count(gear, vs)
+```
+
+* https://stackoverflow.com/questions/66820423/r-how-to-find-the-ratio-when-using-dplyr
+* https://stackoverflow.com/questions/24576515/relative-frequencies-proportions-with-dplyr
+
+#### 割合追加
+
+* gearの水準別のvsの割合(%)
+
+```{r}
+mtcars %>% 
+  count(gear, vs) %>% 
+  group_by(gear) %>% 
+  mutate(perc = n/sum(n)*100)
+```
+
+### tabyl
+```{r}
+mtcars %>% 
+  tabyl(gear, vs)
+```
+
+#### 割合 {.tabset}
+```{r}
+mtcars %>% 
+  tabyl(gear, vs) %>% 
+  adorn_percentages()
+```
+
+##### 割合とn {-}
+```{r}
+mtcars %>% 
+  tabyl(gear, vs) %>% 
+  adorn_percentages() %>% 
+  adorn_ns()
+```
+
+##### 割合（%）とn {-}
+
+```{r}
+mtcars %>% 
+  tabyl(gear, vs) %>% 
+  adorn_percentages() %>% 
+  adorn_pct_formatting() %>% 
+  adorn_ns()
+```
+
+##### nと割合（%) {-}
+
+```{r}
+mtcars %>% 
+  tabyl(gear, vs) %>% 
+  adorn_percentages() %>% 
+  adorn_pct_formatting() %>% 
+  adorn_ns(position = "front")
+```
+
+
+### 欠損ある場合
+```{r}
+penguins %>% 
+  count(species, sex)
+```
+ 
+#### 割合追加
+##### 欠損あり
+```{r}
+penguins %>% 
+  count(species, sex) %>%
+  group_by(species) %>%
+  mutate(perc = n/sum(n)*100)
+```
+
+##### 欠損drop
+```{r}
+penguins %>% 
+  drop_na(species, sex) %>% 
+  count(species, sex) %>%
+  group_by(species) %>%
+  mutate(perc = n/sum(n)*100)
+```
+
+
+
 ## modelsummary::datasummary()
 ```{r}
 modelsummary::datasummary_crosstab(species ~ sex, data = penguins)
@@ -358,6 +448,8 @@ modelsummary::datasummary_crosstab(species ~ sex, data = penguins)
   
 * {{}}とenquoの使いわけ
   + https://stackoverflow.com/questions/65627873/turn-a-dplyr-double-curly-braces-interpolation-into-a-string
+
+## 無名関数 anonymous function
   
 ## 平均値算出
 ### 平均値とn
