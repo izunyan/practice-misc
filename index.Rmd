@@ -1596,6 +1596,22 @@ df %>%
 
 ```
 
+# 回帰
+## 線形
+```{r}
+res <- 
+  lm(mpg ~ ., data = mtcars)
+
+broom::tidy(res)
+```
+
+### 標準化係数
+```{r}
+res2 <- 
+  lm.beta::lm.beta(res)
+
+broom::tidy(res2)
+```
 
 # コードの書式修正
 
@@ -1635,13 +1651,33 @@ test10   = 10
 
 ```
 
+# 引用関連
+
+## RとR Studioまたはパッケージの引用
+
+* [Rを引用する](http://www.okadajp.org/RWiki/?R%E3%82%92%E5%BC%95%E7%94%A8%E3%81%99%E3%82%8B)(RjpWiki)
+　- `citation()`
+* [Citing R](https://intro2r.com/citing-r.html)(An Introduction to R)
+  - `citation("パッケージ名")`
+* [Citing RStudio](https://support.rstudio.com/hc/en-us/articles/206212048-Citing-RStudio)
+  - `RStudio.Version()`
+
+## R Studioでの文献引用
+
+* [RStudio 1.4 Preview: Citations](https://www.rstudio.com/blog/rstudio-1-4-preview-citations/)
+
+```{r}
+
+```
+
+
+
 # R Markdown
+## 数式
+* [Mathematics in R Markdown](https://rpruim.github.io/s341/S19/from-class/MathinRmd.html)
 
-* https://rpruim.github.io/s341/S19/from-class/MathinRmd.html
-
-
-
-# 画面の動画キャプチャをgifファイルに
+# R以外の関連メモ
+## 画面の動画キャプチャをgifファイルに
 
 * 動画だけならwindowsキー + G でもできる
 * ScreenToGifを使う
