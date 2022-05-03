@@ -365,6 +365,32 @@ mtcars %>%
   mutate(perc = n/sum(n)*100)
 ```
 
+### 欠損ある場合
+```{r}
+penguins %>% 
+  count(species, sex)
+```
+ 
+#### 割合追加
+##### 欠損あり
+```{r}
+penguins %>% 
+  count(species, sex) %>%
+  group_by(species) %>%
+  mutate(perc = n/sum(n)*100)
+```
+
+##### 欠損drop
+```{r}
+penguins %>% 
+  drop_na(species, sex) %>% 
+  count(species, sex) %>%
+  group_by(species) %>%
+  mutate(perc = n/sum(n)*100)
+```
+
+
+
 ### tabyl
 ```{r}
 mtcars %>% 
@@ -406,29 +432,19 @@ mtcars %>%
   adorn_ns(position = "front")
 ```
 
-
-### 欠損ある場合
+### 3要因以上
 ```{r}
 penguins %>% 
-  count(species, sex)
-```
- 
-#### 割合追加
-##### 欠損あり
-```{r}
-penguins %>% 
-  count(species, sex) %>%
-  group_by(species) %>%
+  count(island, species, sex) %>%
+  group_by(island, species) %>%
   mutate(perc = n/sum(n)*100)
-```
 
-##### 欠損drop
-```{r}
-penguins %>% 
-  drop_na(species, sex) %>% 
-  count(species, sex) %>%
-  group_by(species) %>%
-  mutate(perc = n/sum(n)*100)
+
+
+# mtcars %>% 
+#   count(gear, vs, am) %>% 
+#   group_by(gear, vs) %>% 
+#   mutate(perc = n/sum(n)*100)
 ```
 
 
@@ -1612,6 +1628,36 @@ res2 <-
 
 broom::tidy(res2)
 ```
+
+# 時間測定
+
+## tictoc
+```{r}
+
+tictoc::tic()
+## tic()とtoc()の間に処理を挟む
+Sys.sleep(1) # 1秒待つ
+tictoc::toc()
+```
+
+### タイトルをつけてログを残す
+```{r}
+tictoc::tic("1秒待つ")
+Sys.sleep(1)
+tictoc::toc(log = TRUE)
+
+tictoc::tic("2秒待つ")
+Sys.sleep(2)
+tictoc::toc(log = TRUE)
+```
+
+#### ログ出力
+```{r}
+tictoc::tic.log() %>% 
+  unlist() %>% 
+  tibble()
+```
+
 
 # コードの書式修正
 
