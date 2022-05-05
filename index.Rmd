@@ -1722,6 +1722,41 @@ test10   = 10
 ## 数式
 * [Mathematics in R Markdown](https://rpruim.github.io/s341/S19/from-class/MathinRmd.html)
 
+## チャンクの色
+
+* https://bookdown.org/yihui/rmarkdown-cookbook/chunk-styling.html
+
+```{r class.source="bg-info"}
+# {r class.source="bg-info"}
+head(mtcars)
+```
+
+```{r class.source="bg-primary"}
+# {r class.source="bg-primary"}
+```
+
+```{r class.source="bg-success"}
+# {r class.source="bg-success"}
+```
+
+```{r class.source="bg-warning"}
+# {r class.source="bg-warning"}
+```
+
+```{r class.source="bg-danger"}
+# {r class.source="bg-danger"}
+```
+
+### 出力チャンクと色分け
+```{r class.source="bg-danger", class.output="bg-warning"}
+# {r class.source="bg-danger", class.output="bg-warning"}
+
+head(mtcars)
+```
+
+
+
+
 # R以外の関連メモ
 ## 画面の動画キャプチャをgifファイルに
 
