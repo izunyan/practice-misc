@@ -1346,7 +1346,7 @@ broom.mixed::tidy(mm, conf.int = TRUE)
 ### icc
 ```{r}
 lme4::VarCorr(mm) %>%
-  as_data_frame() %>%
+  as_tibble() %>%
   mutate(icc = vcov/sum(vcov))
 ```
 
@@ -1612,6 +1612,34 @@ df %>%
 
 ```
 
+## rename
+### 変更対応のリストを代入したい時は名前付きベクトルで
+```{r}
+old <- c("species", "island", "bill_length_mm")
+new <- c("種", "島", "くちばし長さ")
+newvars <- setNames(old, new)
+
+penguins %>%
+  rename(!!!newvars)
+
+```
+
+#### 変更対応リストがデータフレームであるとき
+```{r}
+rename_df <- tibble(
+old = c("species", "island", "bill_length_mm"),
+new = c("種", "島", "くちばし長さ")
+)
+
+rename_df
+
+rename_df %>% 
+  relocate(new) %>% # newを最初に並べ替え
+deframe()
+```
+
+
+
 # 回帰
 ## 線形
 ```{r}
@@ -1635,7 +1663,7 @@ broom::tidy(res2)
 ```{r}
 
 tictoc::tic()
-## tic()とtoc()の間に処理を挟む
+# tic()とtoc()の間に処理を挟む
 Sys.sleep(1) # 1秒待つ
 tictoc::toc()
 ```
