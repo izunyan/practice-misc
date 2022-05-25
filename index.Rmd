@@ -1521,6 +1521,56 @@ se_d
 ```
 
 
+# csv読み込み
+## 基本
+```{r}
+library(vroom)
+vroom("data/penguins.csv")
+```
+
+## 読み込む変数選択
+### 列を特定
+```{r}
+vroom("data/penguins.csv",
+      col_select = c(species, sex))
+```
+
+### ヘルパー関数
+```{r}
+vroom("data/penguins.csv",
+      col_select = starts_with("bill"))
+```
+
+### 読まない列
+```{r}
+vroom("data/penguins.csv",
+      col_select = !c(species, island))
+```
+
+```{r}
+vroom("data/penguins.csv",
+      col_select = list(!c(starts_with("bill"), starts_with("s"))))
+```
+
+## 読み込む型を指定
+### 変数ごとに指定
+
+* 因子型 "f"
+* skip "_"
+* 文字型 "c"
+
+```{r}
+vroom("data/penguins.csv",
+      col_types = c(species = "f", island = "_", bill_length_mm = "c"))
+```
+
+### すべて文字型で
+
+
+```{r}
+vroom("data/penguins.csv",
+      col_types = c(.default = "c"))
+```
 
 
 
