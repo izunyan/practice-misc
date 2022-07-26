@@ -1108,6 +1108,7 @@ mtcars %>%
     head()
 
 ```
+
 ##### trunc
 ```{r}
 mtcars %>% 
@@ -1755,6 +1756,18 @@ mtcars |>
 * https://stackoverflow.com/questions/56243874/tidyverse-correlations-among-multiple-columns-grouped-by-other-column
 
 ```{r}
+mtcars %>%
+  select(mpg, disp, wt, cyl) %>%
+  nest(data = !cyl) %>%
+  mutate(
+    correlations = map(data, correlate)
+  ) %>%
+  unnest(correlations)
+```
+
+
+### 1つのデータフレームに
+```{r}
 mtcars |> 
   select(mpg, disp, wt, cyl) |> 
   group_by(cyl) %>%
@@ -1762,11 +1775,21 @@ mtcars |>
 
 ```
 
+### listのままにして加工してから1つのデータフレームに
 ```{r}
+# groupにする変数の水準を抜き出す
+cyl_level <- 
+mtcars |> 
+  count(cyl) |> 
+  pull(cyl)
+
 mtcars |> 
   select(mpg, disp, wt, cyl) |> 
-  group_by(cyl) %>%
-  group_map(~ correlate(.x))
+  group_by(cyl) |> 
+  group_map(~ correlate(.x)) |> 
+  map(~shave(.x)) |>            # 相関行列の上側を坂采女
+  set_names(cyl_level) |>       # group変数の水準を適用
+  bind_rows(.id = "cyl_level")
 ```
 
 
