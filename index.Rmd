@@ -821,6 +821,9 @@ mean_by2sym(penguins, species, bill_length_mm)
 
 
 ### 作成する変数名にglueを利用する
+
+* `:=`はセイウチ演算子（walrus operator）というらしい
+
 ```{r}
 mean_by3 <- function(df, by, var, prefix = "mean"){
   df %>%
@@ -1718,6 +1721,54 @@ res2 <-
 
 broom::tidy(res2)
 ```
+
+# 相関
+## 基本
+
+ * https://corrr.tidymodels.org/
+
+```{r}
+library(corrr)
+
+mtcars |> 
+  correlate()
+```
+
+### 変数絞って表示
+```{r}
+mtcars |> 
+  correlate() |> 
+  focus(mpg, disp, wt, mirror = TRUE)
+```
+
+### 下側のみに
+```{r}
+mtcars |> 
+  correlate() |> 
+  focus(mpg, disp, wt, mirror = TRUE) |> 
+  shave()
+```
+
+
+## 層別
+
+* https://stackoverflow.com/questions/56243874/tidyverse-correlations-among-multiple-columns-grouped-by-other-column
+
+```{r}
+mtcars |> 
+  select(mpg, disp, wt, cyl) |> 
+  group_by(cyl) %>%
+  group_modify(~ correlate(.x))
+
+```
+
+```{r}
+mtcars |> 
+  select(mpg, disp, wt, cyl) |> 
+  group_by(cyl) %>%
+  group_map(~ correlate(.x))
+```
+
 
 # 時間測定
 
