@@ -1704,6 +1704,126 @@ rename_df %>%
 deframe()
 ```
 
+## mutate
+### 複数回答が1つの列にテキストで入っている時，回答別のフラグ列を作成
+#### サンプルデータ作成
+```{r}
+# 区切りにスペースなし
+df <- tribble(~id, ~multi_answer,
+              1, "りんご,みかん,ぶどう",
+              2, "りんご,ぶどう",
+              3, "メロン,ぶどう",
+              4, "ぶどう,りんご,みかん,メロン")
+
+df
+
+
+# スペース入っている場合
+# tribble(~id, ~multi_answer,
+#         1, "りんご, みかん, ぶどう",
+#         2, "りんご, ぶどう",
+#         3, "メロン, ぶどう",
+#         4, "ぶどう, りんご, みかん, メロン") |> 
+#   mutate(multi_answer = str_remove_all(multi_answer, " ")) # スペース除去
+
+
+```
+ 
+#### 文字列をリストに分割して新しい列に格納
+```{r}
+df <- 
+  df |> 
+  mutate(multi_answer_l = str_split(multi_answer, ",")) # 区切りは","
+
+df
+```
+ 
+#### 各列に分割
+```{r}
+df <- 
+  df |> tidyr::hoist(multi_answer_l, 
+             # 列名指定   
+                     f1 = 1, 
+                     f2 = 2, 
+                     f3 = 3, 
+                     f4 = 4) 
+
+df
+
+
+```
+
+#### 選択肢ごとにフラグを表す列を追加  
+```{r}
+
+ df |> 
+  mutate(りんご = case_when(f1 == "りんご" |
+                            f2 == "りんご" |
+                            f3 == "りんご" |
+                            f4 == "りんご" ~ 1,
+                                      TRUE ~ 0),
+         みかん = case_when(f1 == "みかん" |
+                            f2 == "みかん" |
+                            f3 == "みかん" |
+                            f4 == "みかん" ~ 1,
+                                      TRUE ~ 0),
+         ぶどう = case_when(f1 == "ぶどう" |
+                            f2 == "ぶどう" |
+                            f3 == "ぶどう" |
+                            f4 == "ぶどう" ~ 1,
+                                      TRUE ~ 0),
+         メロン = case_when(f1 == "メロン" |
+                            f2 == "メロン" |
+                            f3 == "メロン" |
+                            f4 == "メロン" ~ 1,
+                                      TRUE ~ 0)
+  )
+```
+
+##### 【効率化】
+###### 関数作成 
+```{r}
+
+# 回答選択肢ごとに列を作る関数作成
+multi_answer <- function(data, answer){
+  data |> 
+    mutate(!!sym({{answer}}) := case_when(f1 == answer |
+                                  　　　  f2 == answer |
+                                  　　　  f3 == answer |
+                                  　　　  f4 == answer ~ 1,
+                                                　TRUE ~ 0))
+}
+
+
+multi_answer(df, "りんご")
+
+
+```
+
+###### 関数適用 
+```{r}
+multi_answer(df, "りんご") |> 
+multi_answer("みかん") |> 
+multi_answer("ぶどう") |> 
+multi_answer("メロン")  
+
+
+```
+
+##### 【さらに効率化】
+
+```{r}
+
+contents <- 
+  c("りんご", "みかん", "ぶどう", "メロン")
+
+df_multi <- 
+  map(contents, ~multi_answer(df, .x)) |> 
+  reduce(full_join)
+
+df_multi
+```
+
 
 
 # 回帰
