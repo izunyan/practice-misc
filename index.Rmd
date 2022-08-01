@@ -334,6 +334,12 @@ df %>% count(moji)
 df %>% tabyl(moji)
 ```
 
+#### countでデータのない水準もn=0で示す
+```{r}
+df %>% count(moji, .drop = FALSE)
+
+```
+
 
 #### tabylでデータのない水準もn=0で示してNAは計算に入れずtotalも示す
 ```{r}
