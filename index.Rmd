@@ -483,7 +483,71 @@ modelsummary::datasummary_crosstab(species ~ sex, data = penguins)
 * {{}}とenquoの使いわけ
   + https://stackoverflow.com/questions/65627873/turn-a-dplyr-double-curly-braces-interpolation-into-a-string
 
+## 基本
+```{r}
+test <- function(x){
+  x + 1
+  }
+
+test(1)
+```
+
+```{r}
+test_xy <- function(x,y){
+  x + y
+}
+
+test_xy(1, 2)
+```
+
+* 式が1行だけなら`{}`不要
+
+```{r}
+test_simple <- function(x) x + 1
+
+test_simple(10)
+```
+
+
+### 省略形
+
+* https://www.r-bloggers.com/2021/05/new-features-in-r-4-1-0/
+
+```{r}
+test_s <- \(x){
+  x + 1
+  }
+
+test_s(100)
+```
+
+```{r}
+test_xy_s <- \(x,y){
+  x + y
+}
+
+test_xy_s(2,3)
+```
+
+
 ## 無名関数 anonymous function
+
+* https://adv-r.hadley.nz/functions.html#exercises-14
+* functionの定義部分を`( )`で囲むと実行できる
+
+```{r}
+(function(x) x + 1)(1)
+```
+
+### 無名関数の省略形（R4.1以降）
+```{r}
+(\(x) x + 1)(1)
+
+(\(x, y) x + y)(2,3)
+
+```
+
+
   
 ## 平均値算出
 ### 平均値とn
@@ -499,6 +563,21 @@ mean_n <-
 
 mean_n(penguins, where(is.numeric))
 ```
+
+#### 
+```{r}
+mean_ns <- 
+  \(data, variable){
+    data %>% 
+      summarise(across({{variable}},
+                       list(mean = \(x) mean(x, na.rm = TRUE),
+                            n    = \(x) sum(!is.na(x))))
+                )
+  }
+
+mean_ns(penguins, where(is.numeric))
+```
+
 
 #### 確認
 ```{r}
@@ -607,6 +686,9 @@ quos(NULL, species, island, c(species, island)) %>%
 # quos(NULL, species, island, c(species, island)) %>% 
 #   map_dfr(~all_group(penguins, bill_length_mm, !!.x))
 ```
+
+
+
 
 ## クロス表
 ### 複数層別と単一のアウトカム
