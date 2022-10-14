@@ -10,10 +10,14 @@ output:
     number_sections: true
     theme: readable
     highlight: pygments
-    css: custom.css
+    # css: custom.css
+#mainfont: "Times New Roman"
 editor_options: 
   chunk_output_type: console
 ---
+
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
