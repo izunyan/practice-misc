@@ -551,6 +551,11 @@ test_xy_s(2,3)
 
 ```
 
+#### `\`（バックスラッシュ）の表示について
+
+* ブラウザでHTML開いたときに円マーク￥（本当は半角）になる場合は，ブラウザのフォント設定で固定幅フォントを英語のものに変えると解決
+
+* 具体的には，Chromeで`三点リーダ > 設定 > デザイン > フォントをカスタマイズ > 固定幅フォント`がデフォルトでMS Gothicになっている場合，ArialとかCourier Newに変える
 
   
 ## 平均値算出
@@ -2073,6 +2078,22 @@ test10   = 10
 
 ```
 
+## 関連ショートカット
+
+* `ctrl + I` 再インデント（階層構造をきれいにする）
+* `ctrl + shift + A` 再フォーマット（複数行にする）
+
+### 例　
+```{r eval = FALSE}
+mtcars |>  
+select(vs,am,gear) 
+
+
+
+```
+
+
+
 # 引用関連
 
 ## RとR Studioまたはパッケージの引用
@@ -2092,7 +2113,20 @@ test10   = 10
 
 ```
 
+<!-- # Webスクレイピング -->
 
+```{r eval=FALSE, include=FALSE}
+# library(rvest)
+# 
+# res_table <- read_html()
+# 
+# table_list <- 
+# res_table |> 
+#   html_table()
+# 
+# res_table_list <- 
+# table_list[[2]]
+```
 
 # R Markdown
 ## 数式
