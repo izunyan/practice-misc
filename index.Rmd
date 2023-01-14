@@ -183,16 +183,27 @@ str_view(text, "(....)_\\1_\\1")
 ### 検討用データフレーム作成
 ```{r}
 mtcars_vsam <- 
-  mtcars %>% 
+  mtcars |> 
   summarise(across(c(vs, am),
                    list(
-                     p = ~mean(., na.rm = TRUE),
-                     n = ~sum(., na.rm = TRUE),
-               total_n = ~sum(!is.na(.))
+                     p = \(x) mean(x, na.rm = TRUE),
+                     n = \(x) sum(x, na.rm = TRUE),
+               total_n = \(x) sum(!is.na(x))
                    ))
             )
 
 mtcars_vsam
+
+# purrr 1.0.0より前
+# mtcars_vsam <- 
+#   mtcars |> 
+#   summarise(across(c(vs, am),
+#                    list(
+#                      p = ~mean(., na.rm = TRUE),
+#                      n = ~sum(., na.rm = TRUE),
+#                total_n = ~sum(!is.na(.))
+#                    ))
+#             )
 ```
 
 #### meanとsdを列名にするpivot_longer(×な例)
@@ -200,7 +211,7 @@ mtcars_vsam
 * total_nも列名にもってきたい
 
 ```{r}
-mtcars_vsam %>% 
+mtcars_vsam |> 
   pivot_longer(everything(),
                names_to = c("items", ".value"),
                names_pattern = "(.*)_(.*)")
@@ -212,16 +223,16 @@ mtcars_vsam %>%
 
 # 降順に並び替えて1行目を取得
 max_value <- 
-names(mtcars_vsam) %>%
-  str_count() %>%
-  as_tibble() %>%
+names(mtcars_vsam) |>
+  str_count() |>
+  as_tibble() |>
   arrange(desc(value))
 
 max_value
 
 # 文字数の最大値取得
 max_value <- 
-  max_value %>% 
+  max_value |> 
   slice(1)
 
 # total_pの前までで切る情報を追加したいため、最大値-total_pの文字数計算
@@ -232,7 +243,7 @@ max_value - str_count("total_p")
 #### meanとsdを列名にするpivot_longer(okな例)
 
 ```{r}
-mtcars_vsam %>% 
+mtcars_vsam |> 
   pivot_longer(everything(),
                names_to = c("items", ".value"),
                names_pattern = "(.{1,2})_(.+)") # _の前は1～2字までに限定
@@ -274,9 +285,9 @@ str_view(numbers, ".{4,7}?") # lazy
 ### 2値変数作成
 ```{r}
 df_peng <-
-  penguins %>%
+  penguins |>
   mutate(across(ends_with("mm"),
-                list(m = ~if_else(. > mean(., na.rm = TRUE),1,0)))
+                list(m = \(x) if_else(x > mean(x, na.rm = TRUE),1,0)))
          )
 ```
 
@@ -284,27 +295,27 @@ df_peng <-
 ```{r}
 
 df_peng_res <- 
-df_peng %>%
+df_peng |>
   summarise(across(ends_with("_m"),
-                   list( p    =~mean(., na.rm = TRUE),
-                         n    =~sum(., na.rm = TRUE),           # bill_length_mm_mが1のn
-                         total_n    =~sum(!is.na(.))))  # bill_length_mm_mのna以外のn（total）
+                   list( p    = \(x) mean(x, na.rm = TRUE),
+                         n    = \(x) sum(x, na.rm = TRUE),           # bill_length_mm_mが1のn
+                         total_n    = \(x) sum(!is.na(x))))  # bill_length_mm_mのna以外のn（total）
   )
 
 
 # 変数名の文字の長さ確認
 # 降順に並び替えて1行目を取得
 max_value <- 
-names(df_peng_res) %>%
-  str_count() %>%
-  as_tibble() %>%
+names(df_peng_res) |>
+  str_count() |>
+  as_tibble() |>
   arrange(desc(value))
 
 max_value
 
 # 文字数の最大値取得
 max_value <- 
-  max_value %>% 
+  max_value |> 
   slice(1)
 
 # total_pの前までで切る情報を追加したいため、最大値-total_pの文字数計算
@@ -314,7 +325,7 @@ max_value - str_count("total_p")
 
 ### meanとsdを列名にするpivot_longer
 ```{r}
-df_peng_res %>% 
+df_peng_res |> 
 pivot_longer(everything(),
                names_to = c("items", ".value"),
                names_pattern = "(.{1,20})_(.+)") # _の前は1～20字までに限定
@@ -335,22 +346,22 @@ df <- tribble(~moji,
 ### 文字型でデフォルト
 
 ```{r}
-df %>% count(moji)
-df %>% tabyl(moji)
+df |> count(moji)
+df |> tabyl(moji)
 ```
 
 
 #### NA外して
 ```{r}
-df %>% 
+df |> 
   tabyl(moji, show_na = FALSE)
 ```
 
 #### countで%
 ```{r}
-df %>% 
-  drop_na(moji) %>% 
-  count(moji) %>% 
+df |> 
+  drop_na(moji) |> 
+  count(moji) |> 
   mutate(percent = n/sum(n))
 ```
 
@@ -361,24 +372,24 @@ df %>%
 
 ```{r}
 df <- 
-  df %>% 
+  df |> 
   mutate(moji = factor(moji, levels = c("a", "b", "c")))
 
-df %>% count(moji)
-df %>% tabyl(moji)
+df |> count(moji)
+df |> tabyl(moji)
 ```
 
 #### countでデータのない水準もn=0で示す
 ```{r}
-df %>% count(moji, .drop = FALSE)
+df |> count(moji, .drop = FALSE)
 
 ```
 
 
 #### tabylでデータのない水準もn=0で示してNAは計算に入れずtotalも示す
 ```{r}
-df %>% 
-  tabyl(moji, show_na = FALSE) %>% 
+df |> 
+  tabyl(moji, show_na = FALSE) |> 
   adorn_totals()
 ```
 
@@ -386,9 +397,9 @@ df %>%
 ```{r}
 df <- tibble(suji = c(1,1,0,0,0,NA))
 
-df %>% tabyl(suji)
+df |> tabyl(suji)
 
-df %>% 
+df |> 
   summarise(percent = mean(suji, na.rm = TRUE),
             n = sum(suji, na.rm = TRUE),
             total_n = sum(!is.na(suji)))
@@ -399,7 +410,7 @@ df %>%
 
 ### count
 ```{r}
-mtcars %>% 
+mtcars |> 
   count(gear, vs)
 ```
 
@@ -411,33 +422,33 @@ mtcars %>%
 * gearの水準別のvsの割合(%)
 
 ```{r}
-mtcars %>% 
-  count(gear, vs) %>% 
-  group_by(gear) %>% 
+mtcars |> 
+  count(gear, vs) |> 
+  group_by(gear) |> 
   mutate(perc = n/sum(n)*100)
 ```
 
 ### 欠損ある場合
 ```{r}
-penguins %>% 
+penguins |> 
   count(species, sex)
 ```
  
 #### 割合追加
 ##### 欠損あり
 ```{r}
-penguins %>% 
-  count(species, sex) %>%
-  group_by(species) %>%
+penguins |> 
+  count(species, sex) |>
+  group_by(species) |>
   mutate(perc = n/sum(n)*100)
 ```
 
 ##### 欠損drop
 ```{r}
-penguins %>% 
-  drop_na(species, sex) %>% 
-  count(species, sex) %>%
-  group_by(species) %>%
+penguins |> 
+  drop_na(species, sex) |> 
+  count(species, sex) |>
+  group_by(species) |>
   mutate(perc = n/sum(n)*100)
 ```
 
@@ -445,57 +456,57 @@ penguins %>%
 
 ### tabyl
 ```{r}
-mtcars %>% 
+mtcars |> 
   tabyl(gear, vs)
 ```
 
 #### 割合 {.tabset}
 ```{r}
-mtcars %>% 
-  tabyl(gear, vs) %>% 
+mtcars |> 
+  tabyl(gear, vs) |> 
   adorn_percentages()
 ```
 
 ##### 割合とn {-}
 ```{r}
-mtcars %>% 
-  tabyl(gear, vs) %>% 
-  adorn_percentages() %>% 
+mtcars |> 
+  tabyl(gear, vs) |> 
+  adorn_percentages() |> 
   adorn_ns()
 ```
 
 ##### 割合（%）とn {-}
 
 ```{r}
-mtcars %>% 
-  tabyl(gear, vs) %>% 
-  adorn_percentages() %>% 
-  adorn_pct_formatting() %>% 
+mtcars |> 
+  tabyl(gear, vs) |> 
+  adorn_percentages() |> 
+  adorn_pct_formatting() |> 
   adorn_ns()
 ```
 
 ##### nと割合（%) {-}
 
 ```{r}
-mtcars %>% 
-  tabyl(gear, vs) %>% 
-  adorn_percentages() %>% 
-  adorn_pct_formatting() %>% 
+mtcars |> 
+  tabyl(gear, vs) |> 
+  adorn_percentages() |> 
+  adorn_pct_formatting() |> 
   adorn_ns(position = "front")
 ```
 
 ### 3要因以上
 ```{r}
-penguins %>% 
-  count(island, species, sex) %>%
-  group_by(island, species) %>%
+penguins |> 
+  count(island, species, sex) |>
+  group_by(island, species) |>
   mutate(perc = n/sum(n)*100)
 
 
 
-# mtcars %>% 
-#   count(gear, vs, am) %>% 
-#   group_by(gear, vs) %>% 
+# mtcars |> 
+#   count(gear, vs, am) |> 
+#   group_by(gear, vs) |> 
 #   mutate(perc = n/sum(n)*100)
 ```
 
@@ -593,10 +604,10 @@ test_xy_s(2,3)
 ```{r}
 mean_n <- 
   function(data, variable){
-    data %>% 
+    data |> 
       summarise(across({{variable}},
-                       list(mean = ~mean(., na.rm = TRUE),
-                            n    = ~sum(!is.na(.))))
+                       list(mean = \(x) mean(x, na.rm = TRUE),
+                            n    = \(x) sum(!is.na(x))))
                 )
   }
 
@@ -607,7 +618,7 @@ mean_n(penguins, where(is.numeric))
 ```{r}
 mean_ns <- 
   \(data, variable){
-    data %>% 
+    data |> 
       summarise(across({{variable}},
                        list(mean = \(x) mean(x, na.rm = TRUE),
                             n    = \(x) sum(!is.na(x))))
@@ -620,10 +631,10 @@ mean_ns(penguins, where(is.numeric))
 
 #### 確認
 ```{r}
-penguins %>% 
+penguins |> 
       summarise(across(where(is.numeric),
-                       list(mean = ~mean(., na.rm = TRUE),
-                            n    = ~sum(!is.na(.))))
+                       list(mean = \(x) mean(x, na.rm = TRUE),
+                            n    = \(x) sum(!is.na(x))))
                 )
 ```
 
@@ -632,11 +643,11 @@ penguins %>%
 ```{r}
 cmean_n <- 
   function(data, variable){
-    data %>% 
+    data |> 
       summarise(across({{variable}},
-                       list(mean = ~mean(., na.rm = TRUE),
-                            n    = ~sum(!is.na(.))))
-      ) %>% 
+                       list(mean = \(x) mean(x, na.rm = TRUE),
+                            n    = \(x) sum(!is.na(x))))
+      ) |> 
       pivot_longer(everything(),
                    names_to = c("variables", ".value"), # ".value"の部分を列名に
                    names_pattern = "(.*)_(.*)")
@@ -647,11 +658,11 @@ cmean_n(penguins, where(is.numeric))
 
 #### 確認
 ```{r}
-penguins %>% 
+penguins |> 
       summarise(across(where(is.numeric),
-                       list(mean = ~mean(., na.rm = TRUE),
-                            n    = ~sum(!is.na(.))))
-      ) %>% 
+                       list(mean = \(x) mean(x, na.rm = TRUE),
+                            n    = \(x) sum(!is.na(x))))
+      ) |> 
       pivot_longer(everything(),
                    names_to = c("variables", ".value"), # ".value"の部分を列名に
                    names_pattern = "(.*)_(.*)")
@@ -663,11 +674,11 @@ penguins %>%
 
 ```{r}
 all_group = function(data, outcome_vars, group_vars = NULL) {
-  data %>% 
-    group_by(across({{group_vars}})) %>% 
+  data |> 
+    group_by(across({{group_vars}})) |> 
     summarise(across({{outcome_vars}}, 
-                     list(mean = ~mean(., na.rm = TRUE),
-                          n    = ~sum(!is.na(.)))))
+                     list(mean = \(x) mean(x, na.rm = TRUE),
+                          n    = \(x) sum(!is.na(x)))))
 }
 
 all_group(penguins, bill_length_mm)
@@ -679,51 +690,51 @@ all_group(penguins, bill_length_mm, species)
 
 #### 確認
 ```{r}
-penguins %>% 
+penguins |> 
   summarise(across(bill_length_mm,
-                   list(mean = ~mean(., na.rm = TRUE),
-                          n    = ~sum(!is.na(.)))))
+                   list(mean = \(x) mean(x, na.rm = TRUE),
+                          n    = \(x) sum(!is.na(x)))))
 
-penguins %>% 
-  group_by(species) %>% 
+penguins |> 
+  group_by(species) |> 
   summarise(across(bill_length_mm,
-                   list(mean = ~mean(., na.rm = TRUE),
-                          n    = ~sum(!is.na(.)))))
+                   list(mean = \(x) mean(x, na.rm = TRUE),
+                          n    = \(x) sum(!is.na(x)))))
 ```
 
 
 #### mapでリストに結果を格納
 ```{r}
-quos(NULL, species) %>% 
-  map(~all_group(penguins, bill_length_mm, !!.x))
+quos(NULL, species) |> 
+  map( \(x) all_group(penguins, bill_length_mm, !!x))
 
 
-quos(NULL, species, island, c(species, island)) %>% 
-  map(~all_group(penguins, bill_length_mm, !!.x))
+quos(NULL, species, island, c(species, island)) |> 
+  map( \(x) all_group(penguins, bill_length_mm, !!x))
 ```
 
 
 #### 1つのデータフレームに
 
 ```{r}
-quos(NULL, species) %>% 
-  map(~all_group(penguins, bill_length_mm, !!.x)) %>% 
+quos(NULL, species) |> 
+  map( \(x) all_group(penguins, bill_length_mm, !!x)) |> 
   bind_rows()
 
 # こちらでもOK
-# quos(NULL, species) %>% 
-#   map_dfr(~all_group(penguins, bill_length_mm, !!.x))
+# quos(NULL, species) |> 
+#   map_dfr( \(x) all_group(penguins, bill_length_mm, !!x))
 ```
 
 
 ```{r}
-quos(NULL, species, island, c(species, island)) %>% 
-  map(~all_group(penguins, bill_length_mm, !!.x)) %>% 
+quos(NULL, species, island, c(species, island)) |> 
+  map(\(x) all_group(penguins, bill_length_mm, !!x)) |> 
   bind_rows()
 
 # こちらでもOK
-# quos(NULL, species, island, c(species, island)) %>% 
-#   map_dfr(~all_group(penguins, bill_length_mm, !!.x))
+# quos(NULL, species, island, c(species, island)) |> 
+#   map_dfr( \(x) all_group(penguins, bill_length_mm, !!x))
 ```
 
 
@@ -733,12 +744,12 @@ quos(NULL, species, island, c(species, island)) %>%
 ### 複数層別と単一のアウトカム
 ```{r}
 nest_tabyl = function(df, outcome_var, nest_vars = NULL){
-df %>%
-  nest(data = -c({{nest_vars}})) %>%
+df |>
+  nest(data = !c({{nest_vars}})) |>
     mutate(freq =
-           map(data, ~ tabyl(.x, {{outcome_var}}))) %>% # show_na = FALSEで欠損無しのpercentのみ算出
-  select(-data) %>%
-  unnest(cols = c(freq)) %>%
+           map(data, \(x) tabyl(x, {{outcome_var}}))) |> # show_na = FALSEで欠損無しのpercentのみ算出
+  select(!data) |>
+  unnest(cols = c(freq)) |>
   as_tibble()
 }
 
@@ -757,23 +768,23 @@ nest_tabyl(penguins, species)
 #### 複数層別
 ```{r}
 # 層：全体，island
-quos(NULL, island) %>% 
-  map( ~nest_tabyl(penguins, species, !!.x))
+quos(NULL, island) |> 
+  map( \(x) nest_tabyl(penguins, species, !!x))
 
 # 層：全体，island, sex, island x sex
-quos(NULL, island, sex, c(island, sex)) %>% 
-  map( ~nest_tabyl(penguins, species, !!.x))
+quos(NULL, island, sex, c(island, sex)) |> 
+  map( \(x) nest_tabyl(penguins, species, !!x))
 ```
 
 
 #### 確認
 ```{r}
-penguins %>%
-  nest(data = -c(island)) %>%
+penguins |>
+  nest(data = !c(island)) |>
     mutate(freq =
-           map(data, ~ tabyl(.x, species))) %>%
-  select(-data) %>%
-  unnest(cols = c(freq)) %>%
+           map(data, \(x) tabyl(x, species))) |>
+  select(!data) |>
+  unnest(cols = c(freq)) |>
   as_tibble()
 ```
 
@@ -781,21 +792,21 @@ penguins %>%
 ### 固定層別と複数のアウトカム
 ```{r}
 # アウトカム：species, island；層：なし
-quos(species, island) %>% 
-  map( ~nest_tabyl(penguins, !!.x))
+quos(species, island) |> 
+  map( \(x) nest_tabyl(penguins, !!x))
 
 
 # 文字でもOK
 vars <- c("species", "island")
 
-vars %>% 
-  map( ~nest_tabyl(penguins, .x)) # !!.xでも動いた
+vars |> 
+  map( \(x) nest_tabyl(penguins, x)) # !!.xでも動いた
 
 
 
 # アウトカム：species, island；層：sex
-quos(species, island) %>% 
-  map( ~nest_tabyl(penguins, !!.x, sex))
+quos(species, island) |> 
+  map( \(x) nest_tabyl(penguins, !!x, sex))
 
 
 ```
@@ -811,33 +822,33 @@ quos(species, island) %>%
 library(psych)
 
 ac <- 
-bfi %>%
-  select(A1,A2,C1,C2) %>% 
+bfi |>
+  select(A1,A2,C1,C2) |> 
   names()  
 
 # 上で定義した変数についてnest_tabyl実行
 ac_res <- 
-map(ac, ~nest_tabyl(bfi, .x, gender)) %>% 
+map(all_of(ac), \(x) nest_tabyl(bfi, x, gender)) |> 
   set_names(ac) # 各要素に項目名の名前を設定
 
 
 # 各リスト要素の上から3つを表示
-map(ac_res, ~head(.,3))
+map(ac_res, \(x) head(x, 3))
 
 # 各変数名を統一した名前にrename
 ac_res <- 
-ac_res %>% 
-  map(~rename_with(.,
-                   ~"response",               # 統一名をここに
+ac_res |> 
+  map(\(x) rename_with(x,
+                   \(x) "response",               # 統一名をここに
                    starts_with(c("A", "C")))
       )
 
 # 各リスト要素の上から3つを表示
-map(ac_res, ~head(.,3))
+map(ac_res, \(x) head(x, 3))
 
 
 # 縦に連結
-ac_res %>% 
+ac_res |> 
   bind_rows(.id = "items")
 ```
 
@@ -847,17 +858,12 @@ ac_res %>%
 ```{r}
 
 # アウトカム：cyl, gear；層：vs
-quos(cyl, gear) %>% 
-  map( ~nest_tabyl(mtcars, !!.x, vs))
+quos(cyl, gear) |> 
+  map( \(x) nest_tabyl(mtcars, !!x, vs))
 
 # アウトカム：cyl, gear；層：vs x am
-quos(cyl, gear) %>% 
-  map( ~nest_tabyl(mtcars, !!.x, c(vs,am)))
-
-
-
-
-
+quos(cyl, gear) |> 
+  map( \(x) nest_tabyl(mtcars, !!x, c(vs,am)))
 ```
 
 ### 複数層別と複数アウトカム
@@ -868,12 +874,12 @@ groups <- quos(NULL, NULL, vs, am)
 outcomes <- quos(cyl, gear, cyl, gear) # 層別と数をそろえるため対応する対象を繰り返す
   
   
-map2(outcomes, groups,  ~nest_tabyl(mtcars, !!.x, !!.y))
+map2(outcomes, groups,  \(x, y) nest_tabyl(mtcars, !!x, !!y))
 ```
 
 #### 確認
 ```{r}
-tabyl(mtcars, vs, cyl) %>% 
+tabyl(mtcars, vs, cyl) |> 
   adorn_percentages()
 ```
 
@@ -904,8 +910,8 @@ tabyl(mtcars, vs, cyl) %>%
 
 ```{r}
 mean_by <- function(df, by, var){
-df %>% 
-  group_by({{by}}) %>% 
+df |> 
+  group_by({{by}}) |> 
   summarise(mean = mean({{var}}, na.rm =  TRUE))
 }
 
@@ -924,8 +930,8 @@ mean_by(penguins, species, bill_length_mm)
 
 ```{r}
 mean_by2 <- function(df, by, var){
-df %>% 
-  group_by(!!enquo(by)) %>% 
+df |> 
+  group_by(!!enquo(by)) |> 
   summarise(mean = mean(!!enquo(var), na.rm =  TRUE))
 }
 
@@ -938,8 +944,8 @@ mean_by2sym <- function(df, by, var){
   sby <- sym(by)
   svar <- sym(var)
   
-df %>% 
-  group_by(!!sby) %>% 
+df |> 
+  group_by(!!sby) |> 
   summarise(mean = mean(!!svar, na.rm =  TRUE))
 }
 
@@ -953,8 +959,8 @@ mean_by2sym(penguins, species, bill_length_mm)
 
 ```{r}
 mean_by3 <- function(df, by, var, prefix = "mean"){
-  df %>%
-    group_by({{ by }}) %>%
+  df |>
+    group_by({{ by }}) |>
     summarise("{prefix}_{{ var }}" := mean({{ var }}, na.rm = TRUE))
 }
 
@@ -968,11 +974,11 @@ mean_by3(penguins, species, bill_length_mm, prefix = "mean")
 ```{r}
 # 使用する変数格納
 vars <-
-  mtcars %>% 
-  select(vs,am,gear) %>% 
+  mtcars |> 
+  select(vs,am,gear) |> 
   names()
 
-map(vars, ~ count(mtcars, .data[[.x]])) %>% 
+map(vars, \(x) count(mtcars, .data[[x]])) |> 
   set_names(vars)                             # listの要素名付与
 ```
 
@@ -980,29 +986,29 @@ map(vars, ~ count(mtcars, .data[[.x]])) %>%
 ```{r}
 # renameしたい変数の型を因子型に
 mtcars_f <- 
-  mtcars %>% 
+  mtcars |> 
   mutate(across(all_of(vars),
                 factor))
 
 # 各変数に対し関数を適用
 tables <- 
-map(vars, ~ tabyl(mtcars_f, .data[[.x]])) %>% 
+map(vars, \(x) tabyl(mtcars_f, .data[[x]])) |> 
   set_names(vars)
 
 # 各変数のtabyl結果で連番作成
 tables <- 
-  map(tables, ~mutate(., vid = row_number()))
+  map(tables, \(x) mutate(x, vid = row_number()))
 
 # 各リスト要素の変数名の列名に文字を追加
 tables <- 
-  tables %>% 
+  tables |> 
   map(~rename_with(., 
                       ~ str_c(., "_test"),
                       starts_with("per")))
 
 # 各リスト要素の変数名の列を同じ名前に
 tables <- 
-  tables %>% 
+  tables |> 
   map(~rename_with(., 
                       ~ "levels",
                       where(is.factor)))
@@ -1032,7 +1038,7 @@ df_2021 <- tribble(
 
 # データフレームをリストにまとめて要素名をつける
 df_list <- 
-  list(df_2020, df_2021) %>% 
+  list(df_2020, df_2021) |> 
   set_names("y20", "y21")
 
 # リスト内のデータフレームのid以外の変数に要素名の接尾辞をつける
@@ -1047,7 +1053,7 @@ df_list
 
 # リスト内のデータフレームを横に連結
 
-df_list %>%
+df_list |>
   reduce(full_join, by = "id")
 
 ```
@@ -1056,22 +1062,21 @@ df_list %>%
 ```{r}
 # アウトカム変数名格納
 outcomes <- 
-  penguins %>% 
-  select(ends_with("_mm")) %>% 
+  penguins |> 
+  select(ends_with("_mm")) |> 
   names()
   
 # 回帰
 res_l <- 
-  outcomes %>% 
-  str_c(., "~ species*sex") %>%
-  map(~lm(as.formula(.x), data = penguins)) %>% 
+  str_c(outcomes, "~ species*sex") |>
+  map(\(x) lm(as.formula(x), data = penguins)) |> 
   set_names(outcomes)
 
 # 結果の要約
 
-  res_l %>% 
-  map(~broom::tidy(., conf.int = TRUE)) %>% 
-  bind_rows(.id = "outcome") %>% 
+  res_l |> 
+  map(\(x) broom::tidy(x, conf.int = TRUE)) |> 
+  bind_rows(.id = "outcome") |> 
     print(n = 18)
 ```
 
@@ -1090,34 +1095,47 @@ describe(penguins)
 ```{r}
 library(skimr)
 
-skim_without_charts(penguins) %>% 
+skim_without_charts(penguins) |> 
   as_tibble()
 
 ```
 
 ### 型を限定
 ```{r}
-skim(penguins) %>% 
-yank("numeric") %>% 
+skim(penguins) |> 
+yank("numeric") |> 
   as_tibble()
 ```
 
 ### 層別
 ```{r}
-penguins %>% 
-  group_by(sex) %>% 
-  skim() %>% 
+penguins |> 
+  group_by(sex) |> 
+  skim() |> 
   as_tibble()
 ```
 
 #### 層別に特定の変数の平均とSD
 ```{r}
-penguins %>% 
-  group_by(species, sex) %>% 
-  skim(bill_length_mm, bill_depth_mm) %>% # selectを先にもってきてもよい
+penguins |> 
+  group_by(species, sex) |> 
+  skim(bill_length_mm, bill_depth_mm) |> # selectを先にもってきてもよい
   as_tibble()
 ```
 
+#### 層別にnを表示
+
+* https://github.com/ropensci/skimr/issues/505
+
+```{r}
+my_skim <- skim_with(base = sfl(n = length))
+
+penguins |> 
+  group_by(species, sex) |> 
+  my_skim(bill_length_mm) |>
+  as_tibble()
+
+```
 
 
 
@@ -1209,7 +1227,7 @@ trunc(0.123456*10^5)/10^5
 #### mutateのなかで使う
 ```{r}
 # 小数第2位まで出ている変数
-mtcars %>% 
+mtcars |> 
   select(drat, wt)
 
 # 変数上書き
@@ -1218,30 +1236,30 @@ mtcars %>%
 
 ##### 変数上書き
 ```{r}
-mtcars %>% 
+mtcars |> 
   mutate(across(c(drat,wt),
-                ~plyr::round_any(., 0.1, floor))) %>% 
-  select(drat, wt) %>% 
+                \(x) plyr::round_any(x, 0.1, floor))) |> 
+  select(drat, wt) |> 
   head()
 
 ```
 
 ##### 変数追加
 ```{r}
-mtcars %>% 
-  select(drat, wt) %>%
+mtcars |> 
+  select(drat, wt) |>
   mutate(across(c(drat,wt),
-                list(fl = ~plyr::round_any(., 0.1, floor)))) %>% 
+                list(fl = \(x) plyr::round_any(x, 0.1, floor)))) |> 
     head()
 
 ```
 
 ##### trunc
 ```{r}
-mtcars %>% 
+mtcars |> 
   mutate(across(c(drat,wt),
-                ~trunc(.*10)/10)) %>% 
-  select(drat, wt) %>% 
+                \(x) trunc(x*10)/10)) |> 
+  select(drat, wt) |> 
   head()
 ```
 
@@ -1273,15 +1291,15 @@ stack(test_l)
 
 ```{r}
 p1 <-
-  penguins %>%
-    select(species, starts_with("bill")) %>% 
-    slice(1:3) %>% 
+  penguins |>
+    select(species, starts_with("bill")) |> 
+    slice(1:3) |> 
     mutate(id = row_number())
   
 p2 <-
-  penguins %>%
-    select(species, starts_with("bill")) %>% 
-    slice(4:6) %>% 
+  penguins |>
+    select(species, starts_with("bill")) |> 
+    slice(4:6) |> 
     mutate(id = row_number())
 ```
 
@@ -1292,25 +1310,25 @@ p2 <-
 
 ```{r}
 p1_2 <-
-  p1 %>%
+  p1 |>
     left_join(p2, by = c("id", "species"))
   
 # 対象となる変数名のベクトル作成
 var_name <- 
-  penguins %>%
-    select(starts_with("bill")) %>% 
+  penguins |>
+    select(starts_with("bill")) |> 
     names()
   
   
 # 差分を計算する関数作成
 make_dif <- function(df, var){
-    df %>%
+    df |>
       mutate(!!sym(str_c("dif_",{{var}})) :=
                     !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
   }
 
 make_dif2 <- function(df, var){
-    df %>%
+    df |>
       mutate("dif_{{var}}" := !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
   }
 
@@ -1320,7 +1338,7 @@ make_dif2 <- function(df, var){
 # make_di2 <- function(df, var){
 # var1 <- sym(str_c({{var}}, ".x"))
 # var2 <- sym(str_c({{var}}, ".y"))
-#       df %>%
+#       df |>
 #       mutate("dif_{{var}}" := !!var1 - !!var2)
 #   }
 
@@ -1328,41 +1346,41 @@ make_dif2 <- function(df, var){
 # make_di2 <- function(df, var){
 # var1 <- sym("{{var}}.x")
 # var2 <- sym("{{var}}.y")
-#       df %>%
+#       df |>
 #       mutate("dif_{{var}}" := !!var1 - !!var2)
 #   }
 
 
 # 動かない
 # make_dif3 <- function(df, var){
-# df %>% 
+# df |> 
 #   mutate("dif_{{var}}" := !!sym("{{var}}.x") - !!sym("{{var}}.y"))
 # }
 
 # 動かない
 # make_dif3 <- function(df, var){
 #   form <- "{{var}}.x - {{var}}.y"
-# df %>%
+# df |>
 #   mutate("dif_{{var}}" := !! rlang::parse_expr(form) )
 # }
 
 
   
-p1_2 %>%
-  reduce(var_name, make_dif, .init = .) %>% 
-  select(id, species, contains("bill_length"), contains("bill_depth")) %>% 
+p1_2 |>
+  reduce(var_name, make_dif, .init = _) |> 
+  select(id, species, contains("bill_length"), contains("bill_depth")) |> 
     glimpse()
 
 
-p1_2 %>%
-  reduce(var_name, make_dif2, .init = .) %>% 
-  select(id, species, contains("bill_length"), contains("bill_depth")) %>% 
+p1_2 |>
+  reduce(var_name, make_dif2, .init = _) |> 
+  select(id, species, contains("bill_length"), contains("bill_depth")) |> 
     glimpse()
 
 
-# p1_2 %>%
-#   reduce(var_name, make_dif3, .init = .) %>%
-#   select(id, species, contains("bill_length"), contains("bill_depth")) %>%
+# p1_2 |>
+#   reduce(var_name, make_dif3, .init = .) |>
+#   select(id, species, contains("bill_length"), contains("bill_depth")) |>
 #     glimpse()
 
 ```
@@ -1382,17 +1400,17 @@ p2_long <-
                values_to = "new")
 
 p1_2_long <-
-  p1_long %>%
+  p1_long |>
     left_join(p2_long, by = c("id", "species", "name"))
   
-p1_2_long %>%
-   mutate(diff = old - new) %>%
+p1_2_long |>
+   mutate(diff = old - new) |>
     pivot_wider(
       names_from = name,
       values_from = old:diff,
       names_glue = "{name}_{.value}"
-    )  %>% 
-  select(id, species, contains("bill_length"), contains("bill_depth")) %>%   
+    )  |> 
+  select(id, species, contains("bill_length"), contains("bill_depth")) |>   
     glimpse()
 ```
 
@@ -1414,7 +1432,7 @@ pryr::object_size(test)
 ## 出力いろいろ
 ```{r}
 vars <- 
-  penguins %>%
+  penguins |>
   names()
 
 vars
@@ -1429,13 +1447,13 @@ dput(vars)
 ## データ
 ```{r}
 btheb <- 
-  HSAUR3::BtheB %>% 
-  clean_names() %>%
+  HSAUR3::BtheB |> 
+  clean_names() |>
   as_tibble()
 
 # id付ける
 btheb <- 
-  btheb %>% 
+  btheb |> 
   rowid_to_column(var = "id") 
 
 btheb
@@ -1444,7 +1462,7 @@ btheb
 ## wideからlongに
 ```{r}
 btheb_long <- 
-  btheb %>% 
+  btheb |> 
   pivot_longer(!c(id:treatment),
                names_to = "time",
                names_prefix = "bdi_", # timeの値から"bdi_"を削除
@@ -1452,7 +1470,7 @@ btheb_long <-
 
 # timeをfactorにして順序指定
 btheb_long <- 
-  btheb_long %>% 
+  btheb_long |> 
   mutate(time = fct_relevel(time, "pre", "2m", "3m", "5m"))
 
 
@@ -1488,17 +1506,17 @@ broom.mixed::tidy(mm, conf.int = TRUE)
 
 ### icc
 ```{r}
-lme4::VarCorr(mm) %>%
-  as_tibble() %>%
+lme4::VarCorr(mm) |>
+  as_tibble() |>
   mutate(icc = vcov/sum(vcov))
 ```
 
 
 ### グラフ
 ```{r}
-btheb_long %>% 
-    mutate(id = factor(id)) %>% 
-    filter(id %in% c(1:20)) %>% # IDが1~20までに限定
+btheb_long |> 
+    mutate(id = factor(id)) |> 
+    filter(id %in% c(1:20)) |> # IDが1~20までに限定
 ggplot(aes(time, bdi, 
            group = id)) + # color = id
   geom_smooth(method = "lm", se = FALSE) +
@@ -1516,7 +1534,7 @@ emmeans::emmeans(mm, specs = trt.vs.ctrl ~ time:treatment, adjust = "none")
 
 # 邪道だけど，絶対どうしてもp値を求められている場合
 # lmerTest::lmer(bdi ~ treatment*time + (1 | id), 
-#               data = btheb_long) %>%
+#               data = btheb_long) |>
 #   anova()
 
 ```
@@ -1545,8 +1563,8 @@ mmt <-
              data = btheb_long)
 
 # 交互作用項だけに
-summary(mmt)$coefficients %>% 
-  as_tibble(rownames = "terms") %>% 
+summary(mmt)$coefficients |> 
+  as_tibble(rownames = "terms") |> 
   filter(terms == "treatmentBtheB:time8m")
 
 ```
@@ -1558,8 +1576,8 @@ summary(mmt)$coefficients %>%
 ### 参考：通常の群間のCohen's d
 #### 平均値
 ```{r}
-btheb %>% 
-  group_by(treatment) %>% 
+btheb |> 
+  group_by(treatment) |> 
   summarise(mean = mean(bdi_8m, na.rm = TRUE),
             sd = sd(bdi_8m, na.rm = TRUE),
             n = sum(!is.na(bdi_8m)))
@@ -1595,7 +1613,7 @@ effectsize::cohens_d(bdi_8m ~ treatment, data = btheb)
 ```{r}
 # data.frame型にする必要あり
 btheb <- 
-  btheb %>% 
+  btheb |> 
   as.data.frame()
 
 # インストール
@@ -1619,7 +1637,7 @@ JTRCI::JTRCI(data = btheb,
 * RCI = change_abs/Sdiff 
 
 ```{r}
-JTRCIdf %>% head()
+JTRCIdf |> head()
 ```
 
 #### 別パッケージでRCI算出
@@ -1632,9 +1650,9 @@ test_retest_bdi <- 0.75
 
 # 8mの欠損を除外したtime1でのBDIのSD
 bdi_pre_sd <- 
-  btheb %>% 
-  drop_na(bdi_8m) %>% 
-  summarise(sd(bdi_pre, na.rm = TRUE)) %>% 
+  btheb |> 
+  drop_na(bdi_8m) |> 
+  summarise(sd(bdi_pre, na.rm = TRUE)) |> 
   pull()
 
 # RCI算出
@@ -1720,6 +1738,9 @@ vroom("data/penguins.csv",
 # dplyrあれこれ
 ## select
 ### 変数の並びをアルファベット順にソートする
+
+* magrittr %>% じゃないと動かない
+
 ```{r}
 df <- 
   tribble(~item10, ~item1, ~item100,  ~item5, ~id,
@@ -1733,7 +1754,7 @@ df %>%
 
 ### 変数の並びを数字順にする
 ```{r}
-df %>% 
+df |> 
   select(id, num_range("item", 1:100))
 ```
 
@@ -1748,14 +1769,14 @@ df <-
          b = c(NA, 2,  2),
          c = c(NA, NA, 3))
 
-df %>% 
+df |> 
   mutate(total = a + b + c)
 
-df %>% 
+df |> 
   mutate(total = sum(c(a, b, c), na.rm = TRUE))
 
 
-df %>% 
+df |> 
   mutate(mean_abc = mean(c(a,b,c), na.rm = TRUE))
 
 
@@ -1766,28 +1787,28 @@ df %>%
 ### rowwise
 #### sum
 ```{r}
-df %>% 
-  rowwise() %>% 
+df |> 
+  rowwise() |> 
   mutate(total = sum(c(a, b, c), na.rm = TRUE))
 ```
 
 #### mean
 ```{r}
-df %>% 
-  rowwise() %>% 
+df |> 
+  rowwise() |> 
   mutate(mean_abc = mean(c(a, b, c), na.rm = TRUE))
 ```
 
 
 #### selection helperを使う
 ```{r}
-df %>% 
-  rowwise() %>% 
+df |> 
+  rowwise() |> 
   mutate(mean_abc = mean(c_across(a:c), na.rm = TRUE))
 
 
-df %>% 
-  rowwise() %>% 
+df |> 
+  rowwise() |> 
   mutate(mean_abc = mean(c_across(everything()), na.rm = TRUE))
 
 ```
@@ -1797,10 +1818,10 @@ df %>%
 * こっちの方が早い
 
 ```{r}
-df %>% 
+df |> 
   mutate(total = rowSums(across(a:c), na.rm = TRUE))
 
-df %>% 
+df |> 
   mutate(total = rowMeans(across(a:c), na.rm = TRUE))
 
 ```
@@ -1812,7 +1833,7 @@ old <- c("species", "island", "bill_length_mm")
 new <- c("種", "島", "くちばし長さ")
 newvars <- setNames(old, new)
 
-penguins %>%
+penguins |>
   rename(!!!newvars)
 
 ```
@@ -1826,8 +1847,8 @@ new = c("種", "島", "くちばし長さ")
 
 rename_df
 
-rename_df %>% 
-  relocate(new) %>% # newを最初に並べ替え
+rename_df |> 
+  relocate(new) |> # newを最初に並べ替え
 deframe()
 ```
 
@@ -1945,7 +1966,7 @@ contents <-
   c("りんご", "みかん", "ぶどう", "メロン")
 
 df_multi <- 
-  map(contents, ~multi_answer(df, .x)) |> 
+  map(contents, \(x) multi_answer(df, x)) |> 
   reduce(full_join)
 
 df_multi
@@ -2003,12 +2024,12 @@ mtcars |>
 * https://stackoverflow.com/questions/56243874/tidyverse-correlations-among-multiple-columns-grouped-by-other-column
 
 ```{r}
-mtcars %>%
-  select(mpg, disp, wt, cyl) %>%
-  nest(data = !cyl) %>%
+mtcars |>
+  select(mpg, disp, wt, cyl) |>
+  nest(data = !cyl) |>
   mutate(
     correlations = map(data, correlate)
-  ) %>%
+  ) |>
   unnest(correlations)
 ```
 
@@ -2017,7 +2038,7 @@ mtcars %>%
 ```{r}
 mtcars |> 
   select(mpg, disp, wt, cyl) |> 
-  group_by(cyl) %>%
+  group_by(cyl) |>
   group_modify(~ correlate(.x))
 
 ```
@@ -2033,8 +2054,8 @@ mtcars |>
 mtcars |> 
   select(mpg, disp, wt, cyl) |> 
   group_by(cyl) |> 
-  group_map(~ correlate(.x)) |> 
-  map(~shave(.x)) |>            # 相関行列の上側を坂采女
+  group_map(~ correlate(.)) |>  # ここは旧表記じゃないと動かない
+  map(\(x) shave(x)) |>         # 相関行列の上側を
   set_names(cyl_level) |>       # group変数の水準を適用
   bind_rows(.id = "cyl_level")
 ```
@@ -2064,8 +2085,8 @@ tictoc::toc(log = TRUE)
 
 #### ログ出力
 ```{r}
-tictoc::tic.log() %>% 
-  unlist() %>% 
+tictoc::tic.log() |> 
+  unlist() |> 
   tibble()
 ```
 
