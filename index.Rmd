@@ -23,11 +23,24 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 # パッケージ読み込み
+
 ```{r}
 library(tidyverse)
 library(palmerpenguins)
 library(janitor)
 ```
+
+## パッケージ入ってない場合はインストールして読み込む場合（コードのみ表示）
+
+* https://community.rstudio.com/t/is-it-a-good-idea-to-conditionally-load-install-libraries-at-the-beginning-of-a-script/15334/5
+
+```{r eval = FALSE}
+if (!require("palmerpenguins")) {
+   install.packages("palmerpenguins")
+   library(palmerpenguins)
+}
+```
+
 
 # github連携
 
@@ -980,6 +993,11 @@ vars <-
 
 map(vars, \(x) count(mtcars, .data[[x]])) |> 
   set_names(vars)                             # listの要素名付与
+
+# 割合も
+map(vars, \(x) count(mtcars, .data[[x]])) |> 
+  set_names(vars) |> 
+map(\(x) mutate(x, percent = n/sum(n)))  
 ```
 
 ## リストの各要素のデータフレームで特定の変数をrename
@@ -990,10 +1008,15 @@ mtcars_f <-
   mutate(across(all_of(vars),
                 factor))
 
-# 各変数に対し関数を適用
 tables <- 
-map(vars, \(x) tabyl(mtcars_f, .data[[x]])) |> 
-  set_names(vars)
+map(vars, \(x) count(mtcars_f, .data[[x]], .drop = FALSE)) |> 
+  set_names(vars) |> 
+map(\(x) mutate(x, percent = n/sum(n)))
+
+# 各変数に対し関数を適用(tidyselect 1.2.0 >= でwarningが出るように)
+# tables <- 
+# map(vars, \(x) tabyl(mtcars_f, .data[[x]])) |> 
+#   set_names(vars)
 
 # 各変数のtabyl結果で連番作成
 tables <- 
@@ -1001,17 +1024,31 @@ tables <-
 
 # 各リスト要素の変数名の列名に文字を追加
 tables <- 
-  tables |> 
-  map(~rename_with(., 
-                      ~ str_c(., "_test"),
-                      starts_with("per")))
+tables |> 
+    map(\(x) rename_with(x, 
+                     \(y) str_c(y, "_test"),
+                     starts_with("per")))
+
+# purrr 1.0.0より前
+# tables <- 
+#   tables |> 
+#   map(~rename_with(., 
+#                       ~ str_c(., "_test"),
+#                       starts_with("per")))
 
 # 各リスト要素の変数名の列を同じ名前に
 tables <- 
   tables |> 
-  map(~rename_with(., 
-                      ~ "levels",
-                      where(is.factor)))
+  map(\(x) rename_with(x, 
+                       ~ "levels",
+                       where(is.factor)))
+
+# purrr 1.0.0より前
+# tables <- 
+#   tables |> 
+#   map(~rename_with(., 
+#                       ~ "levels",
+#                       where(is.factor)))
 
 bind_rows(tables, .id = "var_name")
 
@@ -1046,7 +1083,7 @@ df_list <-
  imap(df_list,
        function(a,b){
          rename_with(a,
-         ~{str_c(., b, sep = "_")}, !id)}
+          \(x) {str_c(x, b, sep = "_")}, !id)}
       )
 
 df_list
@@ -1551,7 +1588,7 @@ $$
 d =  \frac{2t}{\sqrt{df}}
 $$
 
-```{r}
+```{r eval=FALSE, include=FALSE}
  EMAtools::lme.dscore(mm, data = btheb_long, "lme4")
 ```
 
