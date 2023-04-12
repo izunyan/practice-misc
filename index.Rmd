@@ -1,6 +1,6 @@
 ---
 title: "practice_misc"
-author: ""
+author: "やわらかクジラ"
 date: "`r format(Sys.time(), '%Y/%m/%d')`"
 output:
   html_document: 
@@ -1299,6 +1299,26 @@ mtcars |>
   select(drat, wt) |> 
   head()
 ```
+
+# 文字
+## str_replace
+
+* 変更する文字の対照の一覧を名前付きベクトルで作成
+
+```{r}
+moji_vec <- 
+ as.character(1:3) |>                 # ベクトルの値: 変更先の文字
+  set_names(c("one", "two", "three")) # 名前: 元の文字
+
+moji_vec
+
+x <- c("item_one", "item_two", "item_three", "item_two_three")
+x
+
+str_replace_all(x, 
+            moji_vec)
+```
+
 
 # list
 ## 長さの違う要素を持つlistを2列のデータフレームにまとめる
