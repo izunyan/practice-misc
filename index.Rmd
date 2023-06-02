@@ -611,6 +611,39 @@ test_xy_s(2,3)
 
 * 具体的には，Chromeで`三点リーダ > 設定 > デザイン > フォントをカスタマイズ > 固定幅フォント`がデフォルトでMS Gothicになっている場合，ArialとかCourier Newに変える
 
+## 関数の中身確認
+
+* 参考
+  + https://contributor.r-project.org/rdevguide/FindSource.html#finding-r-source-code
+  + https://stackoverflow.com/questions/11173683/how-can-i-read-the-source-code-for-an-r-function
+  + https://stackoverflow.com/questions/19226816/how-can-i-view-the-source-code-for-a-function
+
+
+* 関数を()をつけずに入力して実行
+
+```{r}
+select
+```
+
+* `methods()`で調べるといくつか候補が出る
+
+```{r}
+methods(select)
+```
+
+* 元のパッケージに`:::`(注：コロン3つ)をつけてmethodsで調べた対象を入力して実行するとコードが確認できる
+
+
+```{r}
+dplyr:::select.data.frame
+```
+
+* または関数を使うとパッケージ名なしでもできる
+
+```{r}
+getAnywhere(select.data.frame)
+```
+
   
 ## 平均値算出
 ### 平均値とn
@@ -1876,10 +1909,18 @@ df |>
 
 ```{r}
 df |> 
-  mutate(total = rowSums(across(a:c), na.rm = TRUE))
+  mutate(total = rowSums(pick(a:c), na.rm = TRUE))
 
 df |> 
-  mutate(total = rowMeans(across(a:c), na.rm = TRUE))
+  mutate(total = rowMeans(pick(a:c), na.rm = TRUE))
+
+
+# dplyr < 1.1.0
+# df |> 
+#   mutate(total = rowSums(across(a:c), na.rm = TRUE))
+# 
+# df |> 
+#   mutate(total = rowMeans(across(a:c), na.rm = TRUE))
 
 ```
 
@@ -1910,6 +1951,10 @@ deframe()
 ```
 
 ## mutate
+
+
+
+
 ### 複数回答が1つの列にテキストで入っている時，回答別のフラグ列を作成
 #### サンプルデータ作成
 ```{r}
@@ -2029,6 +2074,28 @@ df_multi <-
 df_multi
 ```
 
+## across周り
+
+### 作成する変数の名前をコントロール
+
+* `across()`の中で`.names =` 引数を入れる 
+
+```{r}
+penguins |> 
+  summarise(across(c(bill_length_mm, bill_depth_mm),
+                   list(
+                     mean = \(x) mean(x, na.rm = TRUE),
+                     n    = \(x) sum(!is.na(x))),
+                   .names = "{.fn}_{.col}"
+                   )
+            
+            )
+
+```
+
+```{r}
+
+```
 
 
 # 回帰
