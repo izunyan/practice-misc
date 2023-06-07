@@ -2340,6 +2340,30 @@ head(mtcars)
 ```
 
 
+# Excel関連
+## openxlsx
+
+* https://ycphs.github.io/openxlsx/index.html
+
+```{r}
+# 空のワークブックとシートを作成
+library(openxlsx)
+wb <- createWorkbook()
+addWorksheet(wb, "ペンギン")
+addWorksheet(wb, "ペンギンraw")
+
+# データをwbに入れる
+writeData(wb, sheet = "ペンギン", penguins, startCol = 1, startRow = 1)
+writeData(wb, sheet = "ペンギンraw", penguins_raw, startCol = 1, startRow = 1)
+
+# 先頭行および先頭列固定
+freezePane(wb, "ペンギン", firstRow = TRUE, firstCol = TRUE) 
+freezePane(wb, "ペンギンraw", firstRow = TRUE, firstCol = TRUE)
+
+
+# 保存
+saveWorkbook(wb, "out/penguins.xlsx", overwrite = TRUE)
+```
 
 
 # R以外の関連メモ
