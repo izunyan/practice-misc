@@ -1953,6 +1953,104 @@ deframe()
 ## mutate
 
 
+### case_whenで値ではなく関数や式を指定する
+```{r}
+tribble(~a, ~b,
+        0, 1,
+        1, 2,
+        2, 3) |> 
+  mutate(b = case_when(a == 0 ~ (\(x) x+1)(b),
+                       a == 1 ~ (\(x) x+2)(b),
+                       .default = b)
+  )
+```
+
+### 対照表を元に値を変換していく
+#### case_whenの場合
+
+- 対照表なし
+
+```{r}
+penguins |> 
+  mutate(speciesj = case_when(
+                       species == "Adelie" ~ "アデリー",
+                       species == "Chinstrap" ~ "ヒゲ",
+                       species == "Gentoo" ~ "ジェンツー",
+                       .default = "その他"),
+                       .keep = "used"
+  ) |> 
+  count(species, speciesj)
+
+  
+  
+  # group_by(species) |> 
+  # slice_head(n = 2)
+```
+
+#### case_matchの場合
+
+- 対照表なし
+
+```{r}
+penguins |> 
+  mutate(speciesj = case_match(species,
+                       "Adelie" ~ "アデリー",
+                       "Chinstrap" ~ "ヒゲ",
+                       "Gentoo" ~ "ジェンツー",
+                       .default = "その他"
+                      ),
+                       .keep = "used"
+  ) |> 
+  count(species, speciesj)
+
+  
+  
+  # group_by(species) |> 
+  # slice_head(n = 2)
+```
+
+#### left_joinでも置き換えと同様の結果を得られる
+
+- 対照表あり。大量の置き換えならこれが最もお手軽な気がする
+  + reference table and left_join
+
+```{r}
+old <- 
+  penguins |> 
+  count(species) |> 
+  pull(species)
+
+new <- c("アデリー", "ヒゲ",   "ジェンツー")
+
+taisho <- 
+  tibble(species = old,
+         speciesj = new)
+
+penguins |> 
+  left_join(taisho) |> 
+  count(species, speciesj)
+
+```
+
+
+#### 名前付きベクトルで置き換え
+
+- 対照表は2つのベクトル
+- https://gist.github.com/IndrajeetPatil/baff8cf625d9fcd5ef2a36f520373426
+- https://www.r-bloggers.com/2018/01/recode-values-with-character-subsetting/
+
+```{r}
+new_old <- 
+  new |>  
+  set_names(old)
+
+# オブジェクト作らずnewを上書き
+# names(new) <- old
+
+penguins |> 
+  mutate(speciesj = new_old[species]) |> 
+  count(species, speciesj)
+```
 
 
 ### 複数回答が1つの列にテキストで入っている時，回答別のフラグ列を作成
@@ -2351,6 +2449,9 @@ library(openxlsx)
 wb <- createWorkbook()
 addWorksheet(wb, "ペンギン")
 addWorksheet(wb, "ペンギンraw")
+
+# フォントをデフォルトからMS Pゴシックに変更
+modifyBaseFont(wb, "MS PGothic")
 
 # データをwbに入れる
 writeData(wb, sheet = "ペンギン", penguins, startCol = 1, startRow = 1)
