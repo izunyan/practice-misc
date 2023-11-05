@@ -718,10 +718,14 @@ penguins |>
 
 * https://community.rstudio.com/t/using-map-with-a-vector-of-variables-and-dplyr-programming/93088
 
+* pickを使う理由
+  - `across()`はその後に関数を適用する仕様だから，そうじゃない場合のよりよい選択肢として
+  - https://www.tidyverse.org/blog/2023/02/dplyr-1-1-0-pick-reframe-arrange/
+
 ```{r}
 all_group = function(data, outcome_vars, group_vars = NULL) {
   data |> 
-    group_by(across({{group_vars}})) |> 
+    group_by(pick({{group_vars}})) |> 
     summarise(across({{outcome_vars}}, 
                      list(mean = \(x) mean(x, na.rm = TRUE),
                           n    = \(x) sum(!is.na(x)))))
@@ -730,6 +734,9 @@ all_group = function(data, outcome_vars, group_vars = NULL) {
 all_group(penguins, bill_length_mm)
 all_group(penguins, bill_length_mm, species)
 
+
+# dplyr 1.1.0より前
+#    group_by(across({{group_vars}})) |> 
 
 
 ```
