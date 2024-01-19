@@ -872,10 +872,10 @@ quos(species, island) |>
 * それを回避するため，tabyl結果が入ったlistに，それぞれ同じ名前にrenamaeしていく
 
 ```{r}
-library(psych)
+library(psychTools) # bfiの格納パッケージ
 
 ac <- 
-bfi |>
+  bfi |>
   select(A1,A2,C1,C2) |> 
   names()  
 
@@ -1164,7 +1164,7 @@ res_l <-
 * 数値の要約には便利
 
 ```{r}
-describe(penguins)
+psych::describe(penguins)
 ```
 
 ## skimr
@@ -1359,6 +1359,19 @@ str_replace_all(x,
             moji_vec)
 ```
 
+## 変数名, 列名, column
+### 出力いろいろ
+```{r}
+vars <- 
+  penguins |>
+  names()
+
+vars
+cat(vars)
+dput(vars)
+noquote(vars)
+```
+
 
 # list
 ## 長さの違う要素を持つlistを2列のデータフレームにまとめる
@@ -1525,17 +1538,7 @@ test <- c(1:10000)
 pryr::object_size(test)
 ```
 
-# 変数名, 列名, column
-## 出力いろいろ
-```{r}
-vars <- 
-  penguins |>
-  names()
 
-vars
-cat(vars)
-dput(vars)
-```
 
 # RCTの解析
 
@@ -2245,6 +2248,20 @@ mtcars |>
   correlate() |> 
   focus(mpg, disp, wt, mirror = TRUE) |> 
   shave()
+```
+
+### ペアワイズ時のnを算出
+```{r}
+psychTools::bfi |>
+  select(A1,A2,C1,C2) |> 
+  pair_n()
+
+# データフレームに
+
+psychTools::bfi |>
+  select(A1,A2,C1,C2) |> 
+  pair_n() |> 
+  as_tibble()
 ```
 
 
