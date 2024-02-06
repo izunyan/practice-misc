@@ -1184,6 +1184,16 @@ yank("numeric") |>
   as_tibble()
 ```
 
+### nを表示
+```{r}
+skimn <- skim_with(base = sfl(n = \(x) sum(!is.na(x))))
+
+skimn(penguins)
+
+```
+
+
+
 ### 層別
 ```{r}
 penguins |> 
@@ -1211,7 +1221,6 @@ penguins |>
   group_by(species, sex) |> 
   my_skim(bill_length_mm) |>
   as_tibble()
-
 ```
 
 
@@ -1361,14 +1370,27 @@ str_replace_all(x,
 
 ## 変数名, 列名, column
 ### 出力いろいろ
+#### そのまま文字ベクトルとして
 ```{r}
 vars <- 
   penguins |>
   names()
 
 vars
-cat(vars)
+```
+
+#### 文字ベクトルの入力時の形式として
+```{r}
 dput(vars)
+```
+
+#### 1つの文字列として
+```{r}
+cat(vars)
+```
+
+#### " "で囲まないベクトルとして
+```{r}
 noquote(vars)
 ```
 
