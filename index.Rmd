@@ -587,6 +587,26 @@ test_xy_s <- \(x,y){
 test_xy_s(2,3)
 ```
 
+### 関数内で数値または文字
+
+```{r}
+test_num <- function(x){
+  print(x)
+} 
+
+test_num(1)
+```
+
+```{r}
+test_chr <- function(x){
+  x2 <- deparse(substitute(x))
+    print(x2)
+} 
+
+test_chr(1)
+```
+
+
 
 ## 無名関数 anonymous function
 
