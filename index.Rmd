@@ -2247,6 +2247,107 @@ penguins |>
 
 ```
 
+# tidyrあれこれ
+## pivot_wider
+### 基本 {.tabset}
+```{r}
+mtcars |> 
+  count(vs)
+
+mtcars |> 
+  count(vs) |> 
+  pivot_wider(names_from = vs,
+              values_from = n)
+
+```
+
+#### names_fromに複数列指定 {-}
+```{r}
+mtcars |> 
+  count(vs) |> 
+  mutate(name = "vs")
+
+mtcars |> 
+  count(vs) |>
+  mutate(name = "vs") |> 
+  pivot_wider(names_from = c(name,vs),
+              values_from = n)
+
+```
+
+#### names_glue(namesの変数1つ) {-}
+```{r}
+mtcars |> 
+  count(vs) |>
+  pivot_wider(names_from = vs,
+              names_glue ="{.value}_{.name}",
+              values_from = n)
+
+```
+
+#### names_glue(namesの列名指定) {-}
+```{r}
+mtcars |> 
+  count(vs) |>
+  pivot_wider(names_from = vs,
+              names_glue ="{.value}_{vs}",
+              values_from = n)
+
+```
+
+#### names_glue(namesの変数2つ) {-}
+```{r}
+mtcars |> 
+     count(vs) |>
+     mutate(name = "vs") |> 
+     pivot_wider(names_from = c(name,vs),
+                 names_glue ="{.value}_{.name}",
+                 values_from = n)
+```
+
+
+
+### 関数にして複数変数への適用
+```{r eval=FALSE, include=FALSE}
+make_pw <- \(data, variable){
+
+
+  data |>
+    count({{variable}}) |>
+    # mutate(name = var_name) |>
+    pivot_wider(names_from = {{variable}},
+                names_glue = paste0("{.value}_", {{variable}}, "{.name}"),
+                values_from = n
+                )
+}
+
+make_pw(mtcars, vs)
+
+
+map(vars, \(x) make_pw(mtcars, .data[[x]]))
+
+
+
+# 使用する変数格納
+vars <-
+  mtcars |> 
+  select(vs,am) |> 
+  names()
+
+
+# count結果のリスト作成
+mtcars_l <- 
+  map(vars, \(x) count(mtcars, .data[[x]])) |> 
+  set_names(vars)                             # listの要素名付与
+
+mtcars_l
+
+map(mtcars_l)
+  
+
+
+```
+
 
 # 回帰
 ## 線形
