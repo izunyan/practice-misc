@@ -1404,6 +1404,13 @@ vars
 dput(vars)
 ```
 
+[constructiveパッケージ](https://cynkra.github.io/constructive/)
+
+```{r}
+constructive::construct(vars)
+```
+
+
 #### 1つの文字列として
 ```{r}
 cat(vars)
@@ -1414,6 +1421,8 @@ cat(vars)
 noquote(vars)
 ```
 
+
+https://cynkra.github.io/constructive/
 
 # list
 ## 長さの違う要素を持つlistを2列のデータフレームにまとめる
@@ -1566,7 +1575,15 @@ p1_2_long |>
     glimpse()
 ```
 
+## 再現可能なデータ例の作成
+```{r}
+constructive::construct(penguins |> head(2))
+```
 
+```{r}
+constructive::construct(penguins |> head(2),
+                         opts_tbl_df("tribble"))
+```
 
 # データのサイズ
 ## Rで使用しているメモリ量
@@ -2307,16 +2324,24 @@ mtcars |>
 
 
 
-### 関数にして複数変数への適用
+### (🚧作成中)関数にして複数変数への適用
 ```{r eval=FALSE, include=FALSE}
+
+# 使用する変数格納
+vars <-
+  mtcars |> 
+  select(vs,am) |> 
+  names()
+
 make_pw <- \(data, variable){
 
+  variable_name <- deparse(substitute(variable))
 
   data |>
     count({{variable}}) |>
     # mutate(name = var_name) |>
     pivot_wider(names_from = {{variable}},
-                names_glue = paste0("{.value}_", {{variable}}, "{.name}"),
+                names_glue = paste0("{.value}_", variable_name,  "_{.name}"), # {{variable}},
                 values_from = n
                 )
 }
@@ -2326,13 +2351,13 @@ make_pw(mtcars, vs)
 
 map(vars, \(x) make_pw(mtcars, .data[[x]]))
 
+# 結果がこうなる
+# [[1]]
+# # A tibble: 1 × 2
+#   `n_.data[[x]]0` `n_.data[[x]]1`
+#             <int>           <int>
+# 1              18              14
 
-
-# 使用する変数格納
-vars <-
-  mtcars |> 
-  select(vs,am) |> 
-  names()
 
 
 # count結果のリスト作成
