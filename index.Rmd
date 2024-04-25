@@ -1464,15 +1464,21 @@ p2 <-
     mutate(id = row_number())
 ```
 
+```{r}
+p1_2 <-
+  p1 |>
+    left_join(p2, by = join_by(id, species))
+
+p1_2
+```
+
+
 
 ### 関数を作成して実行
 
 * 参考：https://github.com/tidyverse/dplyr/issues/4834
 
 ```{r}
-p1_2 <-
-  p1 |>
-    left_join(p2, by = c("id", "species"))
   
 # 対象となる変数名のベクトル作成
 var_name <- 
@@ -1482,18 +1488,44 @@ var_name <-
   
   
 # 差分を計算する関数作成
+
 make_dif <- function(df, var){
-    df |>
-      mutate(!!sym(str_c("dif_",{{var}})) :=
-                    !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
-  }
+  df |>
+    mutate("dif_,{var}" :=
+             !!sym(str_c(var, ".x")) - !!sym(str_c(var, ".y"))
+    )
+}
 
 make_dif2 <- function(df, var){
-    df |>
-      mutate("dif_{{var}}" := !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
-  }
+  df |>
+    mutate("dif_{var}" := 
+             !!sym(str_c(var, ".x")) - !!sym(str_c(var, ".y"))
+    )
+}
 
+# 動く
+# make_dif <- function(df, var){
+#     df |>
+#       mutate(!!sym(str_c("dif_",{{var}})) :=
+#                     !!sym(str_c(var, ".x")) - !!sym(str_c(var, ".y")))
+#   }
+# 
+# make_dif2 <- function(df, var){
+#     df |>
+#       mutate("dif_{{var}}" := !!sym(str_c(var, ".x")) - !!sym(str_c(var, ".y")))
+#   }
 
+# 動く
+# make_dif <- function(df, var){
+#     df |>
+#       mutate(!!sym(str_c("dif_",{{var}})) :=
+#                     !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
+#   }
+# 
+# make_dif2 <- function(df, var){
+#     df |>
+#       mutate("dif_{{var}}" := !!sym(str_c({{var}}, ".x")) - !!sym(str_c({{var}}, ".y")))
+#   }
 
 # 動く
 # make_di2 <- function(df, var){
