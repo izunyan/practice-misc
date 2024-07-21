@@ -1370,9 +1370,9 @@ mtcars |>
 ```
 
 # 文字
-## str_replace
+## str_replace 
 
-* 変更する文字の対照の一覧を名前付きベクトルで作成
+* 置換する文字対の一覧を名前付きベクトルで作成
 
 ```{r}
 moji_vec <- 
@@ -1388,7 +1388,7 @@ str_replace_all(x,
             moji_vec)
 ```
 
-## str_squish
+## str_squish テキスト中の複数空白を1つに
 
 * 文字列の中に複数空白があっても1つだけにする
 
@@ -1396,6 +1396,15 @@ str_replace_all(x,
 
 str_squish("あ　い　　う　　　　え　　　　　　　お")
 
+```
+
+## str_replace 特定の文字列以降を削除
+
+```{r}
+word <- "このテキストより後を削除"
+
+str_replace("文字列　このテキストより後を削除　　削除部分",
+           str_c(word, ".*"), word)
 ```
 
 
@@ -1623,7 +1632,7 @@ p1_2_long |>
 constructive::construct(penguins |> head(2))
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 constructive::construct(penguins |> head(2),
                          opts_tbl_df("tribble"))
 ```
